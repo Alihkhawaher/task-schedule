@@ -757,9 +757,31 @@ function rejectRequest(peerId) {
 
 // Load share section (QR + link + pending requests)
 function loadShareSection() {
-    const roomId = P2P.getStoredRoomId(familyCode);
+    const qrEl = document.getElementById('shareQRCode');
+    const linkEl = document.getElementById('shareLink');
+    const statusEl = document.getElementById('shareRoomStatus');
+
+    // Check P2P room status
+    const isP2PReady = typeof P2P !== 'undefined' && P2P._joined && P2P.room;
+    const roomId = typeof P2P !== 'undefined' ? P2P.getStoredRoomId(familyCode) : null;
+
+    // Show room status
+    if (statusEl) {
+        if (isP2PReady) {
+            const peerCount = P2P.connectedPeers.size;
+            statusEl.innerHTML = `<div class="alert alert-success mb-3">
+                <i class="bi bi-check-circle-fill"></i> <strong>الغرفة نشطة</strong> — جاهز لاستقبال الأجهزة الجديدة
+                ${peerCount > 0 ? `<br><small><i class="bi bi-wifi"></i> ${peerCount} جهاز متصل حالياً</small>` : ''}
+            </div>`;
+        } else {
+            statusEl.innerHTML = `<div class="alert alert-warning mb-3">
+                <i class="bi bi-hourglass-split"></i> <strong>جاري الاتصال بالغرفة...</strong>
+                <br><small>يرجى الانتظار حتى يتم تأسيس الاتصال</small>
+            </div>`;
+        }
+    }
+
     if (!roomId) {
-        const qrEl = document.getElementById('shareQRCode');
         if (qrEl) qrEl.innerHTML = '<p class="text-muted">لم يتم العثور على معرف الغرفة</p>';
         return;
     }
@@ -772,12 +794,22 @@ function loadShareSection() {
         const qr = qrcode(0, 'M');
         qr.addData(shareUrl);
         qr.make();
-        const qrEl = document.getElementById('shareQRCode');
         if (qrEl) qrEl.innerHTML = qr.createSvgTag(4, 0);
     }
 
-    const linkEl = document.getElementById('shareLink');
     if (linkEl) linkEl.value = shareUrl;
+
+    // If P2P isn't ready yet, poll and update when it becomes ready
+    if (!isP2PReady && typeof P2P !== 'undefined') {
+        const checkReady = setInterval(() => {
+            if (P2P._joined && P2P.room) {
+                clearInterval(checkReady);
+                loadShareSection(); // Reload with ready status
+            }
+        }, 1000);
+        // Stop checking after 10 seconds
+        setTimeout(() => clearInterval(checkReady), 10000);
+    }
 
     // Render any pending join requests
     renderJoinRequests();
