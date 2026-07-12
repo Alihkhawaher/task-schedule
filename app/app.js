@@ -174,13 +174,15 @@ $(document).ready(function() {
         }
     });
 
-    // Wait for initial data load then render
-    setTimeout(() => {
+    // Render UI: first from localStorage (instant), then after Gun.js sync
+    const renderUI = () => {
         initializeUI();
         loadTaskTable();
         updateStatistics();
         initializeChart();
-    }, 1500);
+    };
+    setTimeout(renderUI, 200);   // Fast render from localStorage
+    setTimeout(renderUI, 2000);  // Re-render after Gun.js/P2P data arrives
 
     $('#monthSelect').change(function() { currentMonth = parseInt($(this).val()); loadTaskTable(); updateStatistics(); updateChart(); });
     $('#yearSelect').change(function() { currentYear = parseInt($(this).val()); loadTaskTable(); updateStatistics(); updateChart(); });
@@ -370,7 +372,7 @@ async function updateStatistics() {
             const weeks = getWeeksInMonth(currentYear, currentMonth);
             for (let w = 1; w <= weeks; w++) { if (calcWeekRate(u.id, w, currentMonth, currentYear) < 50) activePunishments++; }
         } else if (currentYear === cyv && currentMonth === cmv) {
-            const cw = Math.ceil(cd / 7);
+            const cw = getWeekNumber(today);
             if (cw > 1 && calcWeekRate(u.id, cw - 1, currentMonth, currentYear) < 50) activePunishments++;
         }
     }
@@ -379,12 +381,12 @@ async function updateStatistics() {
     $('#totalRewards').text(`${totalRewards} ريال`);
     $('#activePunishments').text(activePunishments);
     $('#averageCompletion').text(`${avg}%`);
-    $('#currentWeek').text(Math.ceil(cd / 7));
+    $('#currentWeek').text(getWeekNumber(today));
     // Also update statistics modal
     $('#modalTotalRewards').text(`${totalRewards} ريال`);
     $('#modalActivePunishments').text(activePunishments);
     $('#modalAverageCompletion').text(`${avg}%`);
-    $('#modalCurrentWeek').text(Math.ceil(cd / 7));
+    $('#modalCurrentWeek').text(getWeekNumber(today));
 }
 
 function calcCompletionRate(userId, month, year) {
