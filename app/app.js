@@ -515,6 +515,10 @@ function broadcastCurrentData() {
 
 // ==================== P2P SHARE & DEVICES ====================
 
+// Pending join requests (queued silently, rendered in share section)
+let pendingJoinRequests = [];  // { peerId, deviceName, timestamp }
+let joinRequestRateLimit = {}; // peerId → { count, firstAttempt }
+
 // Initialize P2P on page load
 $(document).ready(function() {
     if (typeof P2P !== 'undefined') {
@@ -607,51 +611,191 @@ $(document).ready(function() {
             onJoinRequest: function(peerId, requestData) {
                 console.log('[App] Join request from:', peerId, requestData);
                 handleJoinRequest(peerId, requestData);
+            },
+            onApprovedData: function(peerId, data) {
+                // When admin sends data after approval, the requesting device receives this
             }
         });
     }
 });
 
 // Handle join request from a new device (admin side)
-async function handleJoinRequest(peerId, requestData) {
+// Rate limited: max 5 requests per peer per 5 minutes
+// Requests are queued silently — only shown in the share section
+function handleJoinRequest(peerId, requestData) {
     const deviceName = requestData.deviceName || 'Unknown Device';
+    const now = Date.now();
 
-    const result = await Swal.fire({
-        title: '<i class="bi bi-person-plus"></i> طلب اتصال جديد',
-        html: `<p class="mb-2">جهاز جديد يريد الانضمام للعائلة:</p>
-               <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
-                   <span class="badge bg-primary" style="font-size:1rem;padding:8px 16px;">${escapeHtml(deviceName)}</span>
-               </div>
-               <p class="text-muted"><small>هل توافق على الانضمام؟</small></p>`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-check-lg"></i> موافقة',
-        cancelButtonText: '<i class="bi bi-x-lg"></i> رفض',
-        confirmButtonColor: '#10b981',
-        cancelButtonColor: '#ef4444'
-    });
+    // Rate limiting: max 5 requests per peer per 5 minutes
+    if (!joinRequestRateLimit[peerId]) {
+        joinRequestRateLimit[peerId] = { count: 0, firstAttempt: now };
+    }
+    const rateInfo = joinRequestRateLimit[peerId];
 
-    if (result.isConfirmed) {
-        P2P.approvePeer(peerId, deviceName);
-        loadConnectedDevices();
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: `تمت الموافقة على: ${escapeHtml(deviceName)}`,
-            showConfirmButton: false,
-            timer: 3000
-        });
+    // Reset window if 5 minutes have passed
+    if (now - rateInfo.firstAttempt > 5 * 60 * 1000) {
+        joinRequestRateLimit[peerId] = { count: 1, firstAttempt: now };
     } else {
+        rateInfo.count++;
+    }
+
+    // Auto-reject if rate limit exceeded
+    if (rateInfo.count > 5) {
+        console.log('[App] Rate limit exceeded for peer:', peerId);
         P2P.rejectPeer(peerId);
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'info',
-            title: 'تم رفض الاتصال',
-            showConfirmButton: false,
-            timer: 2000
-        });
+        return;
+    }
+
+    // Check if already pending (avoid duplicates)
+    const existing = pendingJoinRequests.findIndex(r => r.peerId === peerId);
+    if (existing >= 0) {
+        // Update existing request
+        pendingJoinRequests[existing].deviceName = deviceName;
+        pendingJoinRequests[existing].timestamp = now;
+    } else {
+        // Add new request
+        pendingJoinRequests.push({ peerId, deviceName, timestamp: now });
+    }
+
+    // Update badge
+    updateJoinRequestsBadge();
+
+    // If share section is visible, render immediately
+    renderJoinRequests();
+}
+
+// Update the badge on settings gear icon
+function updateJoinRequestsBadge() {
+    const badge = document.getElementById('joinRequestsBadge');
+    if (badge) {
+        if (pendingJoinRequests.length > 0) {
+            badge.textContent = pendingJoinRequests.length;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Render join requests in the share section
+function renderJoinRequests() {
+    const container = document.getElementById('joinRequestsList');
+    if (!container) return;
+
+    if (pendingJoinRequests.length === 0) {
+        container.innerHTML = '<p class="text-muted"><small>لا توجد طلبات حالياً</small></p>';
+        return;
+    }
+
+    let html = '';
+    pendingJoinRequests.forEach((req) => {
+        const timeAgo = getTimeAgo(req.timestamp);
+        html += `<div class="join-request-card" id="request-${req.peerId}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="request-info">
+                        <i class="bi bi-phone"></i> ${escapeHtml(req.deviceName)}
+                    </div>
+                    <div class="request-time">${timeAgo}</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-success" onclick="approveRequest('${req.peerId}')" title="قبول">
+                        <i class="bi bi-check-lg"></i> قبول
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectRequest('${req.peerId}')" title="رفض">
+                        <i class="bi bi-x-lg"></i> رفض
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+// Approve a join request
+function approveRequest(peerId) {
+    const req = pendingJoinRequests.find(r => r.peerId === peerId);
+    if (!req) return;
+
+    P2P.approvePeer(peerId, req.deviceName);
+
+    // Remove from queue
+    pendingJoinRequests = pendingJoinRequests.filter(r => r.peerId !== peerId);
+    updateJoinRequestsBadge();
+    renderJoinRequests();
+    loadConnectedDevices();
+
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `تمت الموافقة على: ${escapeHtml(req.deviceName)}`,
+        showConfirmButton: false,
+        timer: 3000
+    });
+}
+
+// Reject a join request
+function rejectRequest(peerId) {
+    const req = pendingJoinRequests.find(r => r.peerId === peerId);
+    P2P.rejectPeer(peerId);
+
+    // Remove from queue
+    pendingJoinRequests = pendingJoinRequests.filter(r => r.peerId !== peerId);
+    updateJoinRequestsBadge();
+    renderJoinRequests();
+
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: 'تم رفض الاتصال',
+        showConfirmButton: false,
+        timer: 2000
+    });
+}
+
+// Load share section (QR + link + pending requests)
+function loadShareSection() {
+    const roomId = P2P.getStoredRoomId(familyCode);
+    if (!roomId) {
+        const qrEl = document.getElementById('shareQRCode');
+        if (qrEl) qrEl.innerHTML = '<p class="text-muted">لم يتم العثور على معرف الغرفة</p>';
+        return;
+    }
+
+    const baseUrl = window.location.origin + window.location.pathname.replace(/\/app\/index\.html$/, '/index.html');
+    const shareUrl = baseUrl + '?join=' + encodeURIComponent(familyCode) + '&room=' + encodeURIComponent(roomId);
+
+    // Generate QR code
+    if (typeof qrcode !== 'undefined') {
+        const qr = qrcode(0, 'M');
+        qr.addData(shareUrl);
+        qr.make();
+        const qrEl = document.getElementById('shareQRCode');
+        if (qrEl) qrEl.innerHTML = qr.createSvgTag(4, 0);
+    }
+
+    const linkEl = document.getElementById('shareLink');
+    if (linkEl) linkEl.value = shareUrl;
+
+    // Render any pending join requests
+    renderJoinRequests();
+}
+
+function copyShareLink() {
+    const link = document.getElementById('shareLink');
+    if (link) {
+        navigator.clipboard.writeText(link.value);
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم النسخ', showConfirmButton: false, timer: 1500 });
+    }
+}
+
+function shareViaWhatsApp() {
+    const link = document.getElementById('shareLink');
+    if (link) {
+        const text = encodeURIComponent('انضم لجدول المهام العائلي: ' + link.value);
+        window.open('https://wa.me/?text=' + text, '_blank');
     }
 }
 
@@ -664,59 +808,9 @@ function updateSyncIndicator() {
     }
 }
 
-function showShareDevice() {
-    // Generate share URL with family code AND random room ID
-    const roomId = P2P.getStoredRoomId(familyCode);
-    if (!roomId) {
-        Swal.fire('خطأ', 'لم يتم العثور على معرف الغرفة. يرجى إعادة إنشاء العائلة.', 'error');
-        return;
-    }
-    const baseUrl = window.location.origin + window.location.pathname.replace(/\/app\/index\.html$/, '/index.html');
-    const shareUrl = baseUrl + '?join=' + encodeURIComponent(familyCode) + '&room=' + encodeURIComponent(roomId);
+// showShareDevice removed — share is now inside settings overlay (loadShareSection)
 
-    // Generate QR code
-    if (typeof qrcode !== 'undefined') {
-        const qr = qrcode(0, 'M');
-        qr.addData(shareUrl);
-        qr.make();
-        $('#shareQRCode').html(qr.createSvgTag(4, 0));
-    }
-    $('#shareLink').val(shareUrl);
-    $('#shareDeviceModal').modal('show');
-}
-
-function copyShareLink() {
-    const link = $('#shareLink').val();
-    navigator.clipboard.writeText(link);
-    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم النسخ', showConfirmButton: false, timer: 1500 });
-}
-
-function shareViaWhatsApp() {
-    const link = $('#shareLink').val();
-    const text = encodeURIComponent('انضم لجدول المهام العائلي: ' + link);
-    window.open('https://wa.me/?text=' + text, '_blank');
-}
-
-async function handleIncomingConnection(connData) {
-    try {
-        const answer = await P2P.acceptOffer(connData);
-        // Show answer as QR for the other device to scan
-        if (typeof qrcode !== 'undefined') {
-            const qr = qrcode(0, 'M');
-            qr.addData(JSON.stringify(answer));
-            qr.make();
-            Swal.fire({
-                title: 'جاري الاتصال...',
-                html: '<p>امسح هذا الرمز من الجهاز الأول لإتمام الاتصال</p>' + qr.createSvgTag(4, 0),
-                showConfirmButton: true,
-                confirmButtonText: 'تم'
-            });
-        }
-        P2P.clearHash();
-    } catch (e) {
-        console.warn('[App] Failed to handle incoming connection:', e);
-    }
-}
+// handleIncomingConnection removed — dead code (old WebRTC offer/answer flow)
 
 function loadConnectedDevices() {
     if (typeof P2P === 'undefined') return;

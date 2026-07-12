@@ -10,6 +10,7 @@ function loadSettingsData() {
     loadDeviceName();
     loadRewardSettings();
     if (typeof loadConnectedDevices === 'function') loadConnectedDevices();
+    if (typeof loadShareSection === 'function') loadShareSection();
 }
 
 // Reward & Punishment settings
@@ -262,6 +263,161 @@ async function resetData() {
         if (typeof updateChart === 'function') updateChart();
         Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم إعادة التعيين', showConfirmButton: false, timer: 1500 });
     });
+}
+
+// ==================== EXPORT / IMPORT ====================
+
+function exportData() {
+    requirePinForAction(function() {
+        try {
+            const exportObj = {
+                version: 'v6',
+                exportedAt: new Date().toISOString(),
+                familyCode: familyCode,
+                familyName: familyName || sessionStorage.getItem('familyName') || '',
+                data: {
+                    users: localUsers || {},
+                    tasks: localTasks || {},
+                    completions: localCompletions || {}
+                },
+                rewardConfig: {
+                    rewards: APP_CONFIG.rewards,
+                    punishments: APP_CONFIG.punishments
+                },
+                settings: {}
+            };
+
+            // Try to get settings from Gun.js
+            family.get('settings').once((settings) => {
+                if (settings) {
+                    exportObj.settings = {
+                        pinGracePeriod: settings.pinGracePeriod || 1,
+                        startDate: settings.startDate || null
+                    };
+                }
+
+                const json = JSON.stringify(exportObj, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const dateStr = new Date().toISOString().slice(0, 10);
+                a.download = `task-schedule-${familyCode}-${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم تصدير البيانات بنجاح', showConfirmButton: false, timer: 2000 });
+            });
+        } catch (e) {
+            console.error('[Export] Failed:', e);
+            Swal.fire('خطأ', 'فشل تصدير البيانات', 'error');
+        }
+    });
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    // Reset the input so the same file can be selected again
+    event.target.value = '';
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+
+            // Validate structure
+            if (!imported.familyCode || !imported.data) {
+                Swal.fire('خطأ', 'ملف غير صالح — يجب أن يحتوي على familyCode و data', 'error');
+                return;
+            }
+            if (!imported.data.users && !imported.data.tasks && !imported.data.completions) {
+                Swal.fire('خطأ', 'ملف لا يحتوي على بيانات مستخدمين أو مهام', 'error');
+                return;
+            }
+
+            // Require PIN
+            requirePinForAction(async function() {
+                const result = await Swal.fire({
+                    title: 'تأكيد الاستيراد',
+                    html: `<p>سيتم <strong>استبدال</strong> جميع البيانات الحالية بالمستوردة.</p>
+                           <p class="text-muted"><small>العائلة: ${escapeHtml(imported.familyCode)}</small></p>
+                           <p class="text-muted"><small>المستخدمين: ${Object.keys(imported.data.users || {}).length} | المهام: ${Object.keys(imported.data.tasks || {}).length}</small></p>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، استورد البيانات',
+                    cancelButtonText: 'إلغاء',
+                    confirmButtonColor: '#ef4444'
+                });
+
+                if (!result.isConfirmed) return;
+
+                // Overwrite localStorage data
+                const storageKey = 'taskSchedule_' + imported.familyCode;
+                const dataToStore = {
+                    users: imported.data.users || {},
+                    tasks: imported.data.tasks || {},
+                    completions: imported.data.completions || {},
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(storageKey, JSON.stringify(dataToStore));
+
+                // Import reward config
+                if (imported.rewardConfig) {
+                    localStorage.setItem('taskSchedule_rewardConfig_' + imported.familyCode, JSON.stringify(imported.rewardConfig));
+                }
+
+                // Update Gun.js nodes
+                if (imported.data.users) {
+                    Object.entries(imported.data.users).forEach(([id, userData]) => {
+                        usersNode.get(id).put(userData);
+                    });
+                }
+                if (imported.data.tasks) {
+                    Object.entries(imported.data.tasks).forEach(([id, taskData]) => {
+                        tasksNode.get(id).put(taskData);
+                    });
+                }
+                if (imported.data.completions) {
+                    Object.entries(imported.data.completions).forEach(([id, compData]) => {
+                        completionsNode.get(id).put(compData);
+                    });
+                }
+
+                // Import settings
+                if (imported.settings) {
+                    family.get('settings').put(imported.settings);
+                }
+
+                // Update in-memory caches
+                if (imported.data.users) localUsers = imported.data.users;
+                if (imported.data.tasks) localTasks = imported.data.tasks;
+                if (imported.data.completions) localCompletions = imported.data.completions;
+                if (imported.rewardConfig) {
+                    if (imported.rewardConfig.rewards) APP_CONFIG.rewards = imported.rewardConfig.rewards;
+                    if (imported.rewardConfig.punishments) APP_CONFIG.punishments = imported.rewardConfig.punishments;
+                }
+
+                // Broadcast to peers
+                if (typeof broadcastCurrentData === 'function') broadcastCurrentData();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم الاستيراد بنجاح',
+                    text: 'سيتم إعادة تحميل الصفحة لتطبيق البيانات.',
+                    confirmButtonText: 'حسناً'
+                }).then(() => {
+                    location.reload();
+                });
+            });
+        } catch (err) {
+            console.error('[Import] Failed:', err);
+            Swal.fire('خطأ', 'فشل قراءة الملف — تأكد أنه ملف JSON صالح', 'error');
+        }
+    };
+    reader.readAsText(file);
 }
 
 // ==================== PIN HELPERS ====================

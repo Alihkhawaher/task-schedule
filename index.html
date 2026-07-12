@@ -26,16 +26,19 @@
         .btn-auth { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 10px; padding: 12px; font-size: 16px; font-weight: bold; width: 100%; color: white; transition: transform 0.3s; font-family: 'Tajawal', sans-serif; }
         .btn-auth:hover { transform: translateY(-2px); color: white; }
         .btn-auth:disabled { opacity: 0.7; transform: none; }
-        .toggle-link { text-align: center; margin-top: 20px; color: #667eea; cursor: pointer; }
-        .toggle-link:hover { text-decoration: underline; }
         .form-section { display: none; }
         .form-section.active { display: block; }
         .error-msg { color: #dc3545; text-align: center; margin-top: 10px; display: none; }
-        .success-msg { color: #198754; text-align: center; margin-top: 10px; display: none; }
-        .recovery-box { background: #fff3cd; border: 2px dashed #ffc107; border-radius: 10px; padding: 20px; margin: 15px 0; text-align: center; display: none; }
-        .recovery-code { font-size: 24px; font-weight: bold; font-family: monospace; color: #856404; letter-spacing: 3px; direction: ltr; }
         .family-code-box { background: #e8f4fd; border: 2px dashed #0d6efd; border-radius: 10px; padding: 15px; margin: 15px 0; text-align: center; display: none; }
         .family-code { font-size: 28px; font-weight: bold; font-family: monospace; color: #0d6efd; letter-spacing: 5px; direction: ltr; }
+        .connection-status { text-align: center; padding: 20px 0; }
+        .connection-status .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .connection-status .step-icon { font-size: 48px; margin-bottom: 15px; }
+        .connection-status h5 { margin-bottom: 10px; color: #1e293b; }
+        .connection-status p { color: #64748b; font-size: 0.9rem; }
+        .connection-step { display: none; }
+        .connection-step.active { display: block; }
     </style>
 </head>
 <body>
@@ -43,7 +46,7 @@
         <div class="auth-header">
             <i class="bi bi-people-fill"></i>
             <h2 id="pageTitle">جدول المهام العائلي</h2>
-            <p class="text-muted" id="pageSubtitle">أنشئ عائلتك أو ادخل برقمك</p>
+            <p class="text-muted" id="pageSubtitle">أنشئ عائلتك لتبدأ</p>
         </div>
 
         <!-- CREATE FAMILY -->
@@ -70,106 +73,63 @@
             <!-- Family Code Display -->
             <div class="family-code-box" id="familyCodeBox">
                 <p><strong><i class="bi bi-key"></i> رمز عائلتك</strong></p>
-                <p class="text-muted"><small>شارك هذا الرمز مع أفراد عائلتك للانضمام</small></p>
+                <p class="text-muted"><small>شارك هذا الرمز أو امسح QR من تطبيق العائلة</small></p>
                 <div class="family-code" id="familyCodeDisplay"></div>
                 <button class="btn btn-sm btn-outline-primary mt-2" onclick="copyFamilyCode()">
                     <i class="bi bi-clipboard"></i> نسخ الرمز
                 </button>
-            </div>
-
-            <!-- Recovery Code Display -->
-            <div class="recovery-box" id="recoveryBox">
-                <p><strong><i class="bi bi-exclamation-triangle"></i> احفظ رمز الاستعادة!</strong></p>
-                <div class="recovery-code" id="recoveryCodeDisplay"></div>
-                <button class="btn btn-sm btn-outline-warning mt-2" onclick="copyRecoveryCode()">
-                    <i class="bi bi-clipboard"></i> نسخ الرمز
-                </button>
-                <p class="text-muted mt-2"><small>يُعرض مرة واحدة فقط!</small></p>
-                <button class="btn btn-auth mt-3" onclick="goToApp()">
+                <p class="text-muted mt-3"><small>ادخل إلى التطبيق لتبدأ بإدارة المهام ومشاركة الأجهزة</small></p>
+                <button class="btn btn-auth mt-2" onclick="goToApp()">
                     <i class="bi bi-arrow-left"></i> الدخول إلى التطبيق
                 </button>
             </div>
-
-            <div class="toggle-link" onclick="showJoin()">
-                <i class="bi bi-box-arrow-in-left"></i> لديك رمز عائلة؟ انضم
-            </div>
         </div>
 
-        <!-- JOIN FAMILY -->
-        <div id="joinSection" class="form-section">
-            <form id="joinForm">
-                <div class="mb-3">
-                    <label class="form-label">رمز العائلة</label>
-                    <input type="text" class="form-control" id="joinFamilyCode" placeholder="أدخل رمز العائلة" required style="direction: ltr; text-align: center; font-family: monospace; letter-spacing: 3px; font-size: 18px;">
+        <!-- CONNECTION (QR / Share Link) -->
+        <div id="connectionSection" class="form-section">
+            <div class="connection-status">
+                <!-- Step 1: Connecting -->
+                <div class="connection-step active" id="connStepConnecting">
+                    <div class="step-icon">📱</div>
+                    <h5>اتصال بالجهاز المصدر</h5>
+                    <div class="spinner"></div>
+                    <p>جاري الاتصال بالغرفة...</p>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">اسمك</label>
-                    <input type="text" class="form-control" id="joinName" placeholder="أدخل اسمك" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">رمز PIN</label>
-                    <input type="password" class="form-control" id="joinPin" placeholder="أدخل رمزك" required maxlength="6" inputmode="numeric" pattern="[0-9]*">
-                </div>
-                <button type="submit" class="btn btn-auth">
-                    <i class="bi bi-box-arrow-in-left"></i> دخول
-                </button>
-                <div class="error-msg" id="joinError"></div>
-            </form>
-            <div class="toggle-link" onclick="showLogin()">
-                <i class="bi bi-key"></i> لديك حساب؟ ادخل برمز العائلة + PIN
-            </div>
-            <div class="toggle-link mt-2" onclick="showCreate()">
-                <i class="bi bi-person-plus"></i> أنشئ عائلة جديدة
-            </div>
-        </div>
 
-        <!-- LOGIN (returning user) -->
-        <div id="loginSection" class="form-section">
-            <form id="loginForm">
-                <div class="mb-3">
-                    <label class="form-label">رمز العائلة</label>
-                    <input type="text" class="form-control" id="loginFamilyCode" placeholder="رمز العائلة" required style="direction: ltr; text-align: center; font-family: monospace; letter-spacing: 3px; font-size: 18px;">
+                <!-- Step 2: Device Name -->
+                <div class="connection-step" id="connStepName">
+                    <div class="step-icon">✅</div>
+                    <h5>تم الاتصال بالغرفة</h5>
+                    <p class="mb-3">أدخل اسم هذا الجهاز ليتعرف عليه مسؤول العائلة</p>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="connectionDeviceName" placeholder="مثال: تابلت غرفة الجلوس" required>
+                    </div>
+                    <button class="btn btn-auth" onclick="sendConnectionRequest()" id="btnSendRequest">
+                        <i class="bi bi-send"></i> إرسال طلب الانضمام
+                    </button>
+                    <div class="error-msg" id="connNameError"></div>
+                    <div id="connRateLimitMsg" style="display:none;" class="mt-2">
+                        <small class="text-muted"><i class="bi bi-clock"></i> يرجى الانتظار قبل المحاولة مرة أخرى</small>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">اسمك</label>
-                    <input type="text" class="form-control" id="loginName" placeholder="أدخل اسمك" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">رمز PIN</label>
-                    <input type="password" class="form-control" id="loginPin" placeholder="أدخل رمزك" required maxlength="6" inputmode="numeric" pattern="[0-9]*">
-                </div>
-                <button type="submit" class="btn btn-auth">
-                    <i class="bi bi-box-arrow-in-left"></i> دخول
-                </button>
-                <div class="error-msg" id="loginError"></div>
-            </form>
-            <div class="toggle-link" onclick="showForgot()">
-                <i class="bi bi-question-circle"></i> نسيت رمز العائلة؟
-            </div>
-            <div class="toggle-link mt-2" onclick="showCreate()">
-                <i class="bi bi-person-plus"></i> أنشئ عائلة جديدة
-            </div>
-        </div>
 
-        <!-- FORGOT -->
-        <div id="forgotSection" class="form-section">
-            <form id="forgotForm">
-                <div class="mb-3">
-                    <label class="form-label">رمز الاستعادة</label>
-                    <input type="text" class="form-control" id="forgotCode" placeholder="REC-XXXX-XXXX" required style="direction: ltr; text-align: center; font-family: monospace; letter-spacing: 2px;">
+                <!-- Step 3: Waiting for Approval -->
+                <div class="connection-step" id="connStepWaiting">
+                    <div class="step-icon">⏳</div>
+                    <h5>في انتظار موافقة المسؤول</h5>
+                    <div class="spinner"></div>
+                    <p>تم إرسال الطلب، يرجى الانتظار حتى يوافق مسؤول العائلة على الانضمام</p>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">اسم المدير</label>
-                    <input type="text" class="form-control" id="forgotAdminName" placeholder="اسم مدير العائلة" required>
+
+                <!-- Step 4: Rejected -->
+                <div class="connection-step" id="connStepRejected">
+                    <div class="step-icon">❌</div>
+                    <h5>تم رفض الاتصال</h5>
+                    <p>رفض مسؤول العائلة طلب الاتصال. تواصل معه للحصول على الموافقة.</p>
+                    <button class="btn btn-auth mt-3" onclick="retryConnection()">
+                        <i class="bi bi-arrow-clockwise"></i> إعادة المحاولة
+                    </button>
                 </div>
-                <button type="submit" class="btn btn-auth">
-                    <i class="bi bi-key"></i> استعادة رمز العائلة
-                </button>
-                <div class="error-msg" id="forgotError"></div>
-                <div class="success-msg" id="forgotSuccess"></div>
-            </form>
-            <div class="toggle-link" onclick="showLogin()">
-                <i class="bi bi-arrow-right"></i> العودة
             </div>
         </div>
     </div>
@@ -190,7 +150,7 @@
     <script src="app/libs/bootstrap.bundle.min.js"></script>
     <script src="app/libs/qrcode.min.js"></script>
     <script src="app/libs/trystero-bundle.js"></script>
-    <script src="app/p2p.js?v=4"></script>
+    <script src="app/p2p.js?v=5"></script>
     <script>
     // Simple hash function (no bcrypt needed for PINs in browser)
     async function hashPin(pin) {
@@ -212,16 +172,30 @@
         return code;
     }
     function generateFamilyCode() { return generateCode('FAM-', 6); }
-    function generateRecoveryCode() { return generateCode('REC-', 4) + '-' + generateCode('', 4); }
 
     // UI Toggles
-    function showCreate() { document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active')); document.getElementById('createSection').classList.add('active'); document.getElementById('pageTitle').textContent = 'إنشاء عائلة'; document.getElementById('pageSubtitle').textContent = 'أنشئ عائلتك وأضف أفرادها'; }
-    function showJoin() { document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active')); document.getElementById('joinSection').classList.add('active'); document.getElementById('pageTitle').textContent = 'انضم للعائلة'; document.getElementById('pageSubtitle').textContent = 'أدخل رمز العائلة واسمك'; }
-    function showLogin() { document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active')); document.getElementById('loginSection').classList.add('active'); document.getElementById('pageTitle').textContent = 'تسجيل الدخول'; document.getElementById('pageSubtitle').textContent = 'أدخل رمز العائلة واسمك وPIN'; }
-    function showForgot() { document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active')); document.getElementById('forgotSection').classList.add('active'); document.getElementById('pageTitle').textContent = 'استعادة'; document.getElementById('pageSubtitle').textContent = 'أدخل رمز الاستعادة'; }
+    function showCreate() {
+        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('createSection').classList.add('active');
+        document.getElementById('pageTitle').textContent = 'إنشاء عائلة';
+        document.getElementById('pageSubtitle').textContent = 'أنشئ عائلتك لتبدأ';
+    }
+
+    function showConnection() {
+        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('connectionSection').classList.add('active');
+        document.getElementById('pageTitle').textContent = 'انضمام للعائلة';
+        document.getElementById('pageSubtitle').textContent = 'جاري الاتصال بالجهاز المصدر';
+    }
+
+    function showConnectionStep(stepId) {
+        document.querySelectorAll('.connection-step').forEach(s => s.classList.remove('active'));
+        const step = document.getElementById(stepId);
+        if (step) step.classList.add('active');
+    }
+
     function goToApp() { saveSessionToLocalStorage(); window.location.href = 'app/index.html'; }
     function copyFamilyCode() { navigator.clipboard.writeText(document.getElementById('familyCodeDisplay').textContent); Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم النسخ', showConfirmButton: false, timer: 1500 }); }
-    function copyRecoveryCode() { navigator.clipboard.writeText(document.getElementById('recoveryCodeDisplay').textContent); Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم النسخ', showConfirmButton: false, timer: 1500 }); }
 
     // Generate a cryptographically random room ID (non-reversible, 32 bytes hex)
     function generateRoomId() {
@@ -242,21 +216,15 @@
         if (!/^\d{4,6}$/.test(pin)) { errorEl.textContent = 'PIN يجب أن يكون 4-6 أرقام'; errorEl.style.display = 'block'; return; }
 
         const familyCode = generateFamilyCode();
-        const recoveryCode = generateRecoveryCode();
         const roomId = generateRoomId(); // Random, non-reversible room ID
         const pinHash = await hashPin(pin);
-        const recoveryHash = await hashPin(recoveryCode);
 
         // Store family
         gun.get('families').get(familyCode).put({
             familyName: name,
             adminName: adminName,
-            recoveryHash: recoveryHash,
             createdAt: Date.now()
         });
-
-        // Store recovery index for forgot-password lookup
-        gun.get('recovery').get(recoveryHash).put({ familyCode: familyCode });
 
         // Store admin as first member
         const memberId = adminName.toLowerCase().replace(/\s+/g, '_');
@@ -277,181 +245,19 @@
 
         // Show codes
         document.getElementById('createForm').style.display = 'none';
-        document.querySelector('#createSection .toggle-link').style.display = 'none';
         document.getElementById('familyCodeBox').style.display = 'block';
         document.getElementById('familyCodeDisplay').textContent = familyCode;
-        document.getElementById('recoveryBox').style.display = 'block';
-        document.getElementById('recoveryCodeDisplay').textContent = recoveryCode;
     });
-
-    // JOIN FAMILY
-    document.getElementById('joinForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const code = document.getElementById('joinFamilyCode').value.trim().toUpperCase();
-        const name = document.getElementById('joinName').value.trim();
-        const pin = document.getElementById('joinPin').value.trim();
-        const errorEl = document.getElementById('joinError');
-
-        errorEl.style.display = 'none';
-
-        gun.get('families').get(code).once(async (data) => {
-            if (!data || !data.familyName) {
-                errorEl.textContent = 'رمز العائلة غير صحيح';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            const memberId = name.toLowerCase().replace(/\s+/g, '_');
-            const pinHash = await hashPin(pin);
-
-            // Add as new member
-            gun.get('families').get(code).get('members').get(memberId).put({
-                name: name,
-                pinHash: pinHash,
-                role: 'member',
-                createdAt: Date.now()
-            });
-
-            sessionStorage.setItem('familyCode', code);
-            sessionStorage.setItem('memberName', name);
-            sessionStorage.setItem('familyName', data.familyName);
-            saveSessionToLocalStorage();
-
-            window.location.href = 'app/index.html';
-        });
-    });
-
-    // LOGIN — checks P2P received data first, then falls back to Gun.js
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const code = document.getElementById('loginFamilyCode').value.trim().toUpperCase();
-        const name = document.getElementById('loginName').value.trim();
-        const pin = document.getElementById('loginPin').value.trim();
-        const errorEl = document.getElementById('loginError');
-
-        errorEl.style.display = 'none';
-
-        // First: try P2P received data
-        // If P2P is connected but data hasn't arrived yet, wait briefly
-        if (p2pConnected && !receivedFamilyData) {
-            for (let i = 0; i < 10; i++) {
-                await new Promise(r => setTimeout(r, 500));
-                if (receivedFamilyData) break;
-            }
-        }
-        if (receivedFamilyData && receivedFamilyData.familyCode === code && receivedFamilyData.members) {
-            const memberId = name.toLowerCase().replace(/\s+/g, '_');
-            const member = receivedFamilyData.members[memberId];
-            if (!member) {
-                errorEl.textContent = 'الاسم غير صحيح';
-                errorEl.style.display = 'block';
-                return;
-            }
-            if (member.pinHash) {
-                const pinHash = await hashPin(pin);
-                if (pinHash !== member.pinHash) {
-                    errorEl.textContent = 'الرمز غير صحيح';
-                    errorEl.style.display = 'block';
-                    return;
-                }
-            }
-            // Store data to localStorage and login
-            const storageKey = 'taskSchedule_' + code;
-            const existing = localStorage.getItem(storageKey);
-            let data = existing ? JSON.parse(existing) : { users: {}, tasks: {}, completions: {}, timestamp: Date.now() };
-            Object.entries(receivedFamilyData.members).forEach(([id, m]) => { data.users[id] = m; });
-            data.timestamp = Date.now();
-            localStorage.setItem(storageKey, JSON.stringify(data));
-            sessionStorage.setItem('familyCode', code);
-            sessionStorage.setItem('memberName', member.name);
-            sessionStorage.setItem('familyName', receivedFamilyData.familyName || '');
-            saveSessionToLocalStorage();
-            window.location.href = 'app/index.html';
-            return;
-        }
-
-        // Fallback: try Gun.js (local storage)
-        gun.get('families').get(code).once(async (data) => {
-            if (!data || !data.familyName) {
-                errorEl.textContent = 'رمز العائلة غير صحيح';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            const memberId = name.toLowerCase().replace(/\s+/g, '_');
-            const pinHash = await hashPin(pin);
-
-            gun.get('families').get(code).get('members').get(memberId).once((member) => {
-                if (!member || !member.pinHash) {
-                    errorEl.textContent = 'الاسم أو الرمز غير صحيح';
-                    errorEl.style.display = 'block';
-                    return;
-                }
-
-                if (member.pinHash !== pinHash) {
-                    errorEl.textContent = 'الرمز غير صحيح';
-                    errorEl.style.display = 'block';
-                    return;
-                }
-
-                // If room ID not stored (e.g., cleared localStorage), prompt for share link
-                const storedRoomId = localStorage.getItem('taskSchedule_roomId_' + code);
-                if (!storedRoomId) {
-                    errorEl.innerHTML = 'لا يمكن الاتصال — لم يتم العثور على معرف الغرفة.<br><small>يرجى استخدام رابط المشاركة مرة أخرى.</small>';
-                    errorEl.style.display = 'block';
-                    return;
-                }
-
-                sessionStorage.setItem('familyCode', code);
-                sessionStorage.setItem('memberName', member.name);
-                sessionStorage.setItem('familyName', data.familyName);
-                saveSessionToLocalStorage();
-                window.location.href = 'app/index.html';
-            });
-        });
-    });
-
-    // FORGOT - recover family code using recovery code
-    document.getElementById('forgotForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const recoveryCode = document.getElementById('forgotCode').value.trim().toUpperCase();
-        const adminName = document.getElementById('forgotAdminName').value.trim();
-        const errorEl = document.getElementById('forgotError');
-        const successEl = document.getElementById('forgotSuccess');
-
-        errorEl.style.display = 'none';
-        successEl.style.display = 'none';
-
-        const recoveryHash = await hashPin(recoveryCode);
-
-        // Search through families (Gun.js doesn't have query, so we use a known approach)
-        // We'll store a recovery index
-        gun.get('recovery').get(recoveryHash).once((data) => {
-            if (!data || !data.familyCode) {
-                errorEl.textContent = 'رمز الاستعادة غير صحيح';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            successEl.innerHTML = `رمز عائلتك: <strong>${data.familyCode}</strong><br><small>يمكنك الآن العودة وتسجيل الدخول</small>`;
-            successEl.style.display = 'block';
-        });
-    });
-
-    // Also store recovery index when creating family
-    // (This is done in the CREATE FAMILY handler above via a separate Gun node)
 
     // ==================== P2P CONNECTION HANDLING ====================
-    // On the main app (app/index.html), when a user clicks "Share Device":
-    // 1. The existing device creates a P2P offer and encodes it in a URL/QR
-    // 2. The new device opens this link → this page
-    // 3. This page initializes P2P, accepts the offer, connects
-    // 4. Once connected, the existing device sends family data (members list)
-    // 5. This page auto-fills the family code and shows available accounts
 
-    // State for P2P connection
+    // State
     let p2pConnected = false;
     let receivedFamilyData = null;
+    let connectionAttempts = 0;
+    const MAX_CONNECTION_ATTEMPTS = 3;
+    let lastJoinRequestTime = 0;
+    const JOIN_REQUEST_COOLDOWN = 10000; // 10 seconds
 
     // Check for ?join= and ?room= parameters (from share link)
     (function checkJoinParam() {
@@ -463,10 +269,8 @@
             if (roomParam) {
                 localStorage.setItem('taskSchedule_roomId_' + joinCode, roomParam);
             }
-            // Auto-fill the family code and switch to login section
-            document.getElementById('loginFamilyCode').value = joinCode;
-            document.getElementById('joinFamilyCode').value = joinCode;
-            showLogin();
+            // Show connection section (not login form)
+            showConnection();
             // Initialize P2P with this family code for approval flow
             initP2PConnection(joinCode);
             // Clean URL (remove join and room params)
@@ -483,47 +287,38 @@
         const storedRoomId = localStorage.getItem('taskSchedule_roomId_' + roomCode);
         if (!storedRoomId) {
             console.log('[Login] No room ID stored for:', roomCode, '— cannot join P2P room');
+            document.getElementById('pageSubtitle').textContent = 'لا يمكن الاتصال — يرجى استخدام رابط المشاركة مرة أخرى';
             return;
         }
+
+        // Show connecting state
+        showConnectionStep('connStepConnecting');
 
         P2P.init({
             familyCode: roomCode,
             onMessage: function(peerId, message) {
-                if (message.type === 'family-sync') {
-                    // Received family data from connected peer (members, tasks, completions)
-                    receivedFamilyData = message;
-                    handleFamilyDataReceived(message);
-                }
-                if (message.type === 'family-request') {
-                    // A peer is requesting family data (we might have it from localStorage)
-                    const stored = getStoredFamilyData();
-                    if (stored) {
-                        P2P.sendFamilyData(peerId, stored);
-                    }
-                }
-                // Handle approval — admin approved us, data is coming
+                // Handle approval — admin approved us
                 if (message.type === 'connection-approved') {
-                    console.log('[Login] Approved by admin, waiting for data...');
+                    console.log('[Login] Approved by admin');
                     p2pConnected = true;
-                    document.getElementById('joinStatus').innerHTML =
-                        '<div class="alert alert-success mt-2"><i class="bi bi-check-circle"></i> تمت الموافقة! جاري تحميل البيانات...</div>';
                 }
                 // Handle rejection — admin rejected us
                 if (message.type === 'connection-rejected') {
                     console.log('[Login] Rejected by admin');
-                    document.getElementById('joinStatus').innerHTML =
-                        '<div class="alert alert-danger mt-2"><i class="bi bi-x-circle"></i> تم رفض الاتصال من قبل مسؤول العائلة. تواصل معه للحصول على موافقة.</div>';
+                    showConnectionStep('connStepRejected');
+                }
+                // Handle family data sync
+                if (message.type === 'family-sync') {
+                    receivedFamilyData = message;
+                    handleFamilyDataReceived(message);
                 }
             },
             onPeerJoin: function(peerId) {
-                console.log('[Login] Peer connected, sending join-request...');
-                // Send join-request instead of requesting data directly
-                // The admin will approve or reject
-                setTimeout(() => {
-                    P2P.sendJoinRequest();
-                    document.getElementById('joinStatus').innerHTML =
-                        '<div class="alert alert-info mt-2"><i class="bi bi-hourglass-split"></i> في انتظار موافقة مسؤول العائلة...</div>';
-                }, 1000); // Small delay to ensure connection is stable
+                console.log('[Login] Peer connected, showing device name input...');
+                p2pConnected = true;
+                // Show device name input step
+                showConnectionStep('connStepName');
+                document.getElementById('pageSubtitle').textContent = 'تم الاتصال بالغرفة — أدخل اسم جهازك';
             },
             onPeerLeave: function(peerId) {
                 p2pConnected = false;
@@ -531,220 +326,106 @@
         });
     }
 
-    async function handleIncomingP2PConnection(connData) {
-        try {
-            // Show connecting indicator
-            Swal.fire({
-                title: 'جاري الاتصال...',
-                html: '<p class="text-muted">جارٍ الاتصال بالجهاز المصدر</p>',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
+    // Send connection request (after user enters device name)
+    function sendConnectionRequest() {
+        const deviceName = document.getElementById('connectionDeviceName').value.trim();
+        const errorEl = document.getElementById('connNameError');
 
-            // Accept the offer from the existing device
-            const answer = await P2P.acceptOffer(connData);
+        errorEl.style.display = 'none';
 
-            // Now we need the existing device to accept our answer
-            // We encode the answer in a response URL that needs to be scanned
-            // But since we can't send it back automatically, we wait for the peer to connect
-
-            // Store the answer for the peer to pick up (via the same P2P channel)
-            // The existing device will scan the response QR or the connection will establish
-
-            // For now, show the answer QR for the existing device to scan
-            if (typeof qrcode !== 'undefined') {
-                const qr = qrcode(0, 'M');
-                qr.addData(JSON.stringify(answer));
-                qr.make();
-                Swal.fire({
-                    title: 'امسح الرمز من الجهاز المصدر',
-                    html: '<p class="text-muted mb-3">امسح هذا الرمز من الجهاز الذي شارك الرابط لإتمام الاتصال</p>' + qr.createSvgTag(4, 0),
-                    showConfirmButton: true,
-                    confirmButtonText: 'تم الاتصال',
-                    allowOutsideClick: false
-                });
-            }
-
-            // Clear the hash
-            P2P.clearHash();
-
-            // After a short delay, check if we received family data
-            setTimeout(() => {
-                if (!receivedFamilyData) {
-                    // Try to load from localStorage as fallback
-                    const stored = getStoredFamilyData();
-                    if (stored) {
-                        handleFamilyDataReceived(stored);
-                    }
-                }
-            }, 3000);
-
-        } catch (e) {
-            console.error('[Login] P2P connection failed:', e);
-            Swal.close();
+        if (!deviceName) {
+            errorEl.textContent = 'يرجى إدخال اسم الجهاز';
+            errorEl.style.display = 'block';
+            return;
         }
+
+        // Rate limit check
+        const now = Date.now();
+        if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
+            errorEl.textContent = 'تم تجاوز عدد المحاولات. يرجى تحديث الصفحة والمحاولة مرة أخرى.';
+            errorEl.style.display = 'block';
+            document.getElementById('btnSendRequest').disabled = true;
+            return;
+        }
+
+        if (now - lastJoinRequestTime < JOIN_REQUEST_COOLDOWN) {
+            const remaining = Math.ceil((JOIN_REQUEST_COOLDOWN - (now - lastJoinRequestTime)) / 1000);
+            document.getElementById('connRateLimitMsg').style.display = 'block';
+            document.getElementById('connRateLimitMsg').querySelector('small').textContent = `يرجى الانتظار ${remaining} ثانية قبل المحاولة مرة أخرى`;
+            return;
+        }
+
+        // Store device name and send request
+        if (typeof P2P !== 'undefined') {
+            P2P.setDeviceName(deviceName);
+        }
+
+        connectionAttempts++;
+        lastJoinRequestTime = now;
+
+        // Send join request
+        if (typeof P2P !== 'undefined') {
+            P2P.sendJoinRequest(deviceName);
+        }
+
+        // Show waiting state
+        showConnectionStep('connStepWaiting');
+        document.getElementById('pageSubtitle').textContent = 'في انتظار موافقة المسؤول';
+    }
+
+    // Retry connection after rejection
+    function retryConnection() {
+        showConnectionStep('connStepName');
+        document.getElementById('pageSubtitle').textContent = 'أدخل اسم جهازك';
     }
 
     function handleFamilyDataReceived(data) {
-        // Auto-fill the family code
-        if (data.familyCode) {
-            // Set the family code in the login form
-            const loginInput = document.getElementById('loginFamilyCode');
-            if (loginInput) loginInput.value = data.familyCode;
-
-            // Update page title with family name
-            if (data.familyName) {
-                document.getElementById('pageTitle').textContent = 'تسجيل الدخول — ' + data.familyName;
-                document.getElementById('pageSubtitle').textContent = 'اختر حسابك وأدخل PIN';
-            }
-
-            // Show available members as quick-login buttons
-            if (data.members && Object.keys(data.members).length > 0) {
-                showMemberQuickLogin(data.members, data.familyCode, data.familyName);
-            } else {
-                // No members data, just switch to login section
-                showLogin();
-            }
-
-            Swal.close();
-        }
-    }
-
-    // When we check for ?join= param, show join status area
-    // We need to add a div for join status messages
-    (function addJoinStatusArea() {
-        const loginSection = document.getElementById('loginSection');
-        if (loginSection) {
-            const statusDiv = document.createElement('div');
-            statusDiv.id = 'joinStatus';
-            loginSection.insertBefore(statusDiv, loginSection.querySelector('.toggle-link'));
-        }
-    })();
-
-    function showMemberQuickLogin(members, familyCode, familyName) {
-        // Build a nice member selection UI
-        const memberEntries = Object.entries(members);
-        let html = '<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:15px 0;">';
-        memberEntries.forEach(([id, member]) => {
-            const initial = member.name ? member.name.charAt(0) : '?';
-            const colors = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#ef4444'];
-            const color = colors[id.charCodeAt(0) % colors.length];
-            html += `<button onclick="quickLogin('${escapeHtml(familyCode)}', '${escapeHtml(familyName)}', '${escapeHtml(member.name)}')" 
-                style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 16px;border:2px solid #e2e8f0;border-radius:12px;background:white;cursor:pointer;transition:all 0.2s;min-width:80px;font-family:'Tajawal',sans-serif;"
-                onmouseover="this.style.borderColor='${color}';this.style.background='#f8fafc'"
-                onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
-                <div style="width:44px;height:44px;border-radius:12px;background:${color};color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;">${initial}</div>
-                <span style="font-size:0.82rem;font-weight:600;">${escapeHtml(member.name)}</span>
-            </button>`;
-        });
-        html += '</div>';
-
-        Swal.fire({
-            title: familyName || 'اختر حسابك',
-            html: html,
-            showConfirmButton: false,
-            showCancelButton: true,
-            cancelButtonText: 'إلغاء',
-            allowOutsideClick: true
-        });
-    }
-
-    function quickLogin(familyCode, familyName, memberName) {
-        Swal.close();
-        // Ask for PIN verification against the received data
-        if (receivedFamilyData && receivedFamilyData.members) {
-            const memberEntry = Object.entries(receivedFamilyData.members).find(([id, m]) => m.name === memberName);
-            if (memberEntry && memberEntry[1].pinHash) {
-                // Member has a PIN — ask for it
-                Swal.fire({
-                    title: escapeHtml(memberName),
-                    html: '<p class="text-muted">أدخل الرمز الشخصي</p>',
-                    input: 'password',
-                    inputPlaceholder: '••••',
-                    inputAttributes: { maxlength: 6, inputmode: 'numeric', pattern: '[0-9]*', style: 'text-align:center;font-size:28px;letter-spacing:12px;' },
-                    showCancelButton: true,
-                    confirmButtonText: 'دخول',
-                    cancelButtonText: 'إلغاء',
-                    showLoaderOnConfirm: true,
-                    allowOutsideClick: () => !Swal.isLoading(),
-                    preConfirm: async (p) => {
-                        if (!p) { Swal.showValidationMessage('يرجى إدخال الرمز'); return false; }
-                        const pinHash = await hashPin(p);
-                        if (pinHash !== memberEntry[1].pinHash) { Swal.showValidationMessage('الرمز غير صحيح'); return false; }
-                        return p;
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        doLogin(familyCode, familyName, memberName);
-                    }
-                });
-                return;
-            }
-            // Member has no PIN — login directly
-            doLogin(familyCode, familyName, memberName);
-        } else {
-            // No P2P data, just login
-            doLogin(familyCode, familyName, memberName);
-        }
-    }
-
-    function doLogin(familyCode, familyName, memberName) {
-        // Store session
-        sessionStorage.setItem('familyCode', familyCode);
-        sessionStorage.setItem('memberName', memberName);
-        sessionStorage.setItem('familyName', familyName);
-        // Store family data to localStorage so app.js can load it immediately
-        if (receivedFamilyData) {
-            const storageKey = 'taskSchedule_' + familyCode;
+        if (data.familyCode && data.members && Object.keys(data.members).length > 0) {
+            // Store family data to localStorage
+            const storageKey = 'taskSchedule_' + data.familyCode;
             const existing = localStorage.getItem(storageKey);
-            let data = existing ? JSON.parse(existing) : { users: {}, tasks: {}, completions: {}, timestamp: Date.now() };
-            // Merge received members
-            if (receivedFamilyData.members) {
-                Object.entries(receivedFamilyData.members).forEach(([id, member]) => {
-                    data.users[id] = member;
-                });
-            }
-            // Merge received tasks
-            if (receivedFamilyData.tasks) {
-                Object.entries(receivedFamilyData.tasks).forEach(([id, task]) => {
-                    if (!data.tasks[id] || task.createdAt > (data.tasks[id].createdAt || 0)) {
-                        data.tasks[id] = task;
-                    }
-                });
-            }
-            // Merge received completions
-            if (receivedFamilyData.completions) {
-                Object.entries(receivedFamilyData.completions).forEach(([id, comp]) => {
-                    if (!data.completions[id] || comp.timestamp > (data.completions[id].timestamp || 0)) {
-                        data.completions[id] = comp;
-                    }
-                });
-            }
-            data.timestamp = Date.now();
-            localStorage.setItem(storageKey, JSON.stringify(data));
-        }
-        // Go to app
-        window.location.href = 'app/index.html';
-    }
+            let localData = existing ? JSON.parse(existing) : { users: {}, tasks: {}, completions: {}, timestamp: Date.now() };
 
-    function getStoredFamilyData() {
-        // Try to get family data from localStorage (saved by the main app)
-        const code = sessionStorage.getItem('familyCode') || '';
-        if (!code) return null;
-        try {
-            const raw = localStorage.getItem('taskSchedule_' + code);
-            if (raw) {
-                const data = JSON.parse(raw);
-                return {
-                    familyCode: code,
-                    familyName: sessionStorage.getItem('familyName') || '',
-                    members: data.users || {},
-                    tasks: data.tasks || {},
-                    completions: data.completions || {}
-                };
+            // Merge members
+            if (data.members) {
+                Object.entries(data.members).forEach(([id, member]) => {
+                    localData.users[id] = member;
+                });
             }
-        } catch (e) {}
-        return null;
+            // Merge tasks
+            if (data.tasks) {
+                Object.entries(data.tasks).forEach(([id, task]) => {
+                    if (!localData.tasks[id] || task.createdAt > (localData.tasks[id].createdAt || 0)) {
+                        localData.tasks[id] = task;
+                    }
+                });
+            }
+            // Merge completions
+            if (data.completions) {
+                Object.entries(data.completions).forEach(([id, comp]) => {
+                    if (!localData.completions[id] || comp.timestamp > (localData.completions[id].timestamp || 0)) {
+                        localData.completions[id] = comp;
+                    }
+                });
+            }
+            localData.timestamp = Date.now();
+            localStorage.setItem(storageKey, JSON.stringify(localData));
+
+            // Save reward config if included
+            if (data.rewardConfig) {
+                localStorage.setItem('taskSchedule_rewardConfig_' + data.familyCode, JSON.stringify(data.rewardConfig));
+            }
+
+            // Set session — memberName is device name (shared tablet, no login)
+            const deviceName = (typeof P2P !== 'undefined' && P2P.getDeviceName()) || 'shared-device';
+            sessionStorage.setItem('familyCode', data.familyCode);
+            sessionStorage.setItem('memberName', deviceName);
+            sessionStorage.setItem('familyName', data.familyName || '');
+            saveSessionToLocalStorage();
+
+            // Auto-redirect to main app
+            window.location.href = 'app/index.html';
+        }
     }
 
     // ==================== PWA INSTALL ====================

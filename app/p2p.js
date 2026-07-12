@@ -248,8 +248,8 @@ const P2P = {
 
     // ==================== JOIN REQUEST (New Device) ====================
 
-    sendJoinRequest() {
-        const myName = this.getDeviceName();
+    sendJoinRequest(deviceName) {
+        const myName = deviceName || this.getDeviceName();
         const storedToken = this.getStoredApprovalToken();
 
         if (this.actions.join) {
@@ -258,7 +258,7 @@ const P2P = {
                 deviceName: myName || 'New Device',
                 token: storedToken || null
             });
-            console.log('[P2P] Sent join-request, token:', storedToken ? 'yes' : 'no');
+            console.log('[P2P] Sent join-request, device:', myName, 'token:', storedToken ? 'yes' : 'no');
             return true;
         }
         return false;
