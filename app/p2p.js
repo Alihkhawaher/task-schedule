@@ -244,21 +244,6 @@ const P2P = {
         };
 
         console.log('[P2P] Joined room:', roomId.substring(0, 12) + '...', 'as', this.selfId);
-
-        // Send periodic presence pings so Nostr relays can broker WebRTC connections.
-        // Without this, a new mobile peer joining may not discover an idle admin peer.
-        this._presenceInterval = setInterval(() => {
-            if (this.actions.data) {
-                this.actions.data.send({ type: 'presence-ping', ts: Date.now() });
-            }
-        }, 5000); // every 5 seconds
-        // Stop pinging after 60 seconds (signaling should be complete by then)
-        setTimeout(() => {
-            if (this._presenceInterval) {
-                clearInterval(this._presenceInterval);
-                this._presenceInterval = null;
-            }
-        }, 60000);
     },
 
     // ==================== JOIN REQUEST (New Device) ====================
@@ -599,29 +584,14 @@ const P2P = {
     },
 
     destroy() {
+        if (this._presenceInterval) {
+            clearInterval(this._presenceInterval);
+            this._presenceInterval = null;
+        }
         if (this.room) {
             this.room.leave();
             this.room = null;
         }
-    },
-
-    // ==================== ROOM REFRESH ====================
-    // Re-join the room to refresh Nostr signaling subscription
-    // This fixes stale WebSocket connections that prevent new peer discovery
-    refreshRoom() {
-        if (!this.roomId) return;
-        const roomId = this.roomId;
-        console.log('[P2P] Refreshing room for fresh Nostr subscription...');
-        if (this.room) {
-            this.room.leave();
-        }
-        this._joined = false;
-        this._joining = false;
-        this.connectedPeers.clear();
-        // Small delay to ensure clean state before rejoining
-        setTimeout(() => {
-            this.joinRoom(roomId);
-        }, 500);
     }
 };
 

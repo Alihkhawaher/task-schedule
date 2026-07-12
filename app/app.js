@@ -757,24 +757,6 @@ function rejectRequest(peerId) {
 
 // Load share section (QR + link + pending requests)
 function loadShareSection() {
-    // Restart presence beacon when share section opens
-    // This helps new devices discover us via Nostr relay signaling
-    if (typeof P2P !== 'undefined' && P2P._joined && P2P.actions.data) {
-        if (P2P._presenceInterval) clearInterval(P2P._presenceInterval);
-        P2P._presenceInterval = setInterval(() => {
-            if (P2P.actions.data) {
-                P2P.actions.data.send({ type: 'presence-ping', ts: Date.now() });
-            }
-        }, 5000);
-        // Stop after 2 minutes
-        setTimeout(() => {
-            if (P2P._presenceInterval) {
-                clearInterval(P2P._presenceInterval);
-                P2P._presenceInterval = null;
-            }
-        }, 120000);
-    }
-
     const roomId = P2P.getStoredRoomId(familyCode);
     if (!roomId) {
         const qrEl = document.getElementById('shareQRCode');
