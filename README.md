@@ -92,13 +92,10 @@ Open shared link → family code auto-fills → enter name + PIN → admin appro
 ## File Structure
 
 ```
-├── index.html              # Login page
+├── index.html              # Login page (Create Family + Connection)
 ├── manifest.json           # PWA manifest
 ├── README.md               # This file
 ├── app-design.md           # Comprehensive design document
-├── testing/                # Test scripts
-│   ├── run_tests.py        # Static file/code validation
-│   └── p2p_test.py         # Live P2P connectivity tests
 └── app/
     ├── index.html          # Main app (schedule + settings overlay)
     ├── app.js              # Core logic (schedule, stats, rewards, P2P broadcast)
@@ -108,22 +105,6 @@ Open shared link → family code auto-fills → enter name + PIN → admin appro
     ├── icons/              # SVG icons for PWA manifest
     └── libs/               # All dependencies (bundled locally)
 ```
-
-## Testing
-
-```bash
-# Static validation — file structure, code patterns
-python testing/run_tests.py
-
-# Live P2P tests — Nostr relay connectivity, WebSocket, event exchange
-python testing/p2p_test.py
-```
-
-Tests verify:
-- All Trystero API methods present and correct
-- Defensive `peerId` extraction in all message handlers
-- Nostr relay connectivity (HTTPS + WebSocket)
-- Share link format correct
 
 ## Technology Stack
 
