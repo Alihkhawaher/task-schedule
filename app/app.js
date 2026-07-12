@@ -1017,7 +1017,7 @@ async function promptPinForSettings(callback) {
 function getWeekNumber(date) { const f = new Date(date.getFullYear(), date.getMonth(), 1); return Math.ceil((date.getDate() + f.getDay()) / 7); }
 function getWeeksInMonth(y, m) { return getWeekNumber(new Date(y, m + 1, 0)); }
 function getDaysInWeekOfMonth(w, m, y) { const f = new Date(y, m, 1), o = f.getDay(), d = new Date(y, m + 1, 0).getDate(); const s = Math.max(1, (w-1)*7-o+1), e = Math.min(d, w*7-o); return s > e ? 0 : e - s + 1; }
-function scrollToCurrentDay() { setTimeout(() => { const t = new Date(); if (currentMonth === t.getMonth() && currentYear === t.getFullYear()) { const el = $('.date-cell.current-day'); if (el.length) { const w = $('.table-wrapper'); w.animate({ scrollTop: el.offset().top - w.offset().top - 50 }, 500); } } }, 200); }
+function scrollToCurrentDay() { setTimeout(() => { const t = new Date(); if (currentMonth === t.getMonth() && currentYear === t.getFullYear()) { const el = $('tr.current-day'); if (el.length) { const w = $('.table-wrapper'); w.animate({ scrollTop: el.offset().top - w.offset().top - 50 }, 500); } } }, 500); }
 function showStatistics() { updateRewardsAndPunishments(); updateChart(); $('#statisticsModal').modal('show'); }
 function updateRewardsAndPunishments() { /* updates are done in showRewards/showPunishments */ }
 
