@@ -181,8 +181,8 @@ $(document).ready(function() {
         updateStatistics();
         initializeChart();
     };
-    setTimeout(renderUI, 200);   // Fast render from localStorage
-    setTimeout(renderUI, 2000);  // Re-render after Gun.js/P2P data arrives
+    setTimeout(() => { renderUI(); scrollToCurrentDay(); }, 200);   // Fast render from localStorage + scroll to today
+    setTimeout(renderUI, 2000);  // Re-render after Gun.js/P2P data arrives (no scroll — stay where user is)
 
     $('#monthSelect').change(function() { currentMonth = parseInt($(this).val()); loadTaskTable(); updateStatistics(); updateChart(); });
     $('#yearSelect').change(function() { currentYear = parseInt($(this).val()); loadTaskTable(); updateStatistics(); updateChart(); });
@@ -249,7 +249,6 @@ async function loadTaskTable() {
         const uid = $(this).data('userId'), uname = $(this).data('userName'), date = $(this).data('date');
         promptPinAndOpen(uid, uname, date);
     });
-    scrollToCurrentDay();
 }
 
 function getDailyCompletion(userId, date, totalTasks) {
