@@ -294,6 +294,21 @@
         // Show connecting state
         showConnectionStep('connStepConnecting');
 
+        // Auto-retry: if no peer connects within 15s, refresh the Nostr subscription
+        let connectionTimeout = setTimeout(() => {
+            if (!p2pConnected && typeof P2P !== 'undefined') {
+                console.log('[Login] No peer found after 15s, refreshing room...');
+                P2P.refreshRoom();
+                // Try one more time after another 15s
+                connectionTimeout = setTimeout(() => {
+                    if (!p2pConnected && typeof P2P !== 'undefined') {
+                        console.log('[Login] Still no peer, refreshing room again...');
+                        P2P.refreshRoom();
+                    }
+                }, 15000);
+            }
+        }, 15000);
+
         P2P.init({
             familyCode: roomCode,
             onMessage: function(peerId, message) {
