@@ -410,6 +410,26 @@ function importData(event) {
                     family.get('settings').put(imported.settings);
                 }
 
+                // Import room ID
+                if (imported.roomId && typeof P2P !== 'undefined') {
+                    P2P.storeRoomId(imported.familyCode, imported.roomId);
+                }
+
+                // Import approved tokens
+                if (imported.approvedTokens && typeof P2P !== 'undefined') {
+                    localStorage.setItem(P2P.APPROVED_TOKENS_KEY, JSON.stringify(imported.approvedTokens));
+                }
+
+                // Import approval token (this device's token)
+                if (imported.approvalToken && typeof P2P !== 'undefined') {
+                    P2P.storeApprovalToken(imported.approvalToken);
+                }
+
+                // Import device name
+                if (imported.deviceName && typeof P2P !== 'undefined') {
+                    P2P.setDeviceName(imported.deviceName);
+                }
+
                 // Update in-memory caches
                 if (imported.data.users) localUsers = imported.data.users;
                 if (imported.data.tasks) localTasks = imported.data.tasks;
