@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول المهام العائلي - V6</title>
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#0d6efd">
+    <link href="libs/tajawal.css" rel="stylesheet">
+    <link href="libs/bootstrap.min.css" rel="stylesheet">
+    <link href="libs/bootstrap-icons.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <style>
+        .header-extra-link { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.8rem; margin-left: 8px; }
+        .header-extra-link:hover { color: white; }
+        .footer-links { text-align: center; padding: 8px 0; font-size: 0.8rem; }
+        .footer-links a { color: #94a3b8; text-decoration: none; margin: 0 8px; }
+        .footer-links a:hover { color: #6366f1; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <!-- ==================== MAIN SCHEDULE VIEW ==================== -->
+    <div class="dashboard-container" id="mainView">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1><i class="bi bi-calendar-check"></i> جدول المهام العائلي</h1>
+                    <div id="syncIndicator" class="sync-indicator"><span class="sync-dot" title="متصل"></span></div>
+                </div>
+                <div class="header-right">
+                    <div class="date-selectors">
+                        <select id="monthSelect" class="form-select">
+                            <option value="0">يناير</option><option value="1">فبراير</option><option value="2">مارس</option>
+                            <option value="3">أبريل</option><option value="4">مايو</option><option value="5">يونيو</option>
+                            <option value="6">يوليو</option><option value="7">أغسطس</option><option value="8">سبتمبر</option>
+                            <option value="9">أكتوبر</option><option value="10">نوفمبر</option><option value="11">ديسمبر</option>
+                        </select>
+                        <select id="yearSelect" class="form-select"></select>
+                    </div>
+                    <button class="btn btn-outline-light btn-sm ms-2" id="btnOpenSettings" title="الإعدادات">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                    <button class="btn btn-outline-light btn-sm ms-1" onclick="logout()" title="تسجيل الخروج">
+                        <i class="bi bi-box-arrow-left"></i>
+                    </button>
+                    <a href="https://github.com/Alihkhawaher/task-schedule" target="_blank" rel="noopener" class="header-extra-link" title="GitHub"><i class="bi bi-github"></i></a>
+                    <a href="#" class="header-extra-link" id="installHeaderLink" style="display:none;" onclick="installPWA(); return false;" title="تثبيت التطبيق"><i class="bi bi-download"></i></a>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <div class="stats-bar">
+                <div class="stat-item"><div class="stat-icon-wrap green"><i class="bi bi-trophy"></i></div><div><div class="stat-value" id="totalRewards">0 ريال</div><div class="stat-label">المكافآت</div></div></div>
+                <div class="stat-item"><div class="stat-icon-wrap red"><i class="bi bi-exclamation-triangle"></i></div><div><div class="stat-value" id="activePunishments">0</div><div class="stat-label">العقوبات</div></div></div>
+                <div class="stat-item"><div class="stat-icon-wrap blue"><i class="bi bi-percent"></i></div><div><div class="stat-value" id="averageCompletion">0%</div><div class="stat-label">متوسط الإنجاز</div></div></div>
+                <div class="stat-item"><div class="stat-icon-wrap yellow"><i class="bi bi-calendar-week"></i></div><div><div class="stat-value" id="currentWeek">1</div><div class="stat-label">الأسبوع الحالي</div></div></div>
+            </div>
+            <div class="control-panel"><div class="control-buttons">
+                <button class="btn" onclick="showStatistics()"><i class="bi bi-bar-chart"></i> الإحصائيات</button>
+                <button class="btn" onclick="showRewards()"><i class="bi bi-trophy"></i> المكافآت</button>
+                <button class="btn" onclick="showPunishments()"><i class="bi bi-exclamation-triangle"></i> العقوبات</button>
+                <button class="btn" onclick="showShareDevice()" style="border-color:var(--primary);color:var(--primary);"><i class="bi bi-qr-code"></i> مشاركة الجهاز</button>
+            </div></div>
+            <div class="icon-legend">
+                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> ممتاز</div>
+                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#34d399"/><circle cx="11" cy="11" r="6" fill="white"/><circle cx="11" cy="11" r="3" fill="#34d399"/></svg> جيد جداً</div>
+                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#fbbf24"/><path d="M11 5 A6 6 0 0 1 11 17" fill="white" opacity="0.5"/><circle cx="11" cy="11" r="3" fill="white"/></svg> جيد</div>
+                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#f97316" opacity="0.8"/><circle cx="11" cy="11" r="7" fill="white" opacity="0.4"/><circle cx="11" cy="11" r="4" fill="#f97316"/></svg> ضعيف</div>
+                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#ef4444" opacity="0.6"/><circle cx="11" cy="11" r="10" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4 3"/></svg> مقبول</div>
+                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg> لم يُنجز</div>
+            </div>
+            <div class="task-legend-container"><div class="task-legend" id="taskLegend"></div></div>
+
+            <div class="table-container">
+                <div class="table-wrapper">
+                    <table id="taskTable" class="task-table"><thead></thead><tbody></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Modal -->
+        <div class="modal fade" id="statisticsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">إحصائيات التقدم</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="stats-row">
+                    <div class="stat-card success"><div class="stat-icon"><i class="bi bi-trophy"></i></div><div class="stat-content"><div class="stat-value" id="totalRewards">0 ريال</div><div class="stat-label">المكافآت</div></div></div>
+                    <div class="stat-card warning"><div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div><div class="stat-content"><div class="stat-value" id="activePunishments">0</div><div class="stat-label">العقوبات</div></div></div>
+                    <div class="stat-card info"><div class="stat-icon"><i class="bi bi-percent"></i></div><div class="stat-content"><div class="stat-value" id="averageCompletion">0%</div><div class="stat-label">متوسط الإنجاز</div></div></div>
+                    <div class="stat-card primary"><div class="stat-icon"><i class="bi bi-calendar-week"></i></div><div class="stat-content"><div class="stat-value" id="currentWeek">1</div><div class="stat-label">الأسبوع الحالي</div></div></div>
+                </div>
+                <div class="chart-section mt-4"><canvas id="progressChart"></canvas></div>
+            </div>
+        </div></div></div>
+
+        <!-- Rewards Modal -->
+        <div class="modal fade" id="rewardsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title"><i class="bi bi-gift"></i> المكافآت</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body"><div class="table-responsive"><table class="table table-striped"><thead><tr><th>الاسم</th><th>الفترة</th><th>النسبة</th><th>المكافأة</th></tr></thead><tbody id="rewardsTableBody"></tbody></table></div></div>
+        </div></div></div>
+
+        <!-- Punishments Modal -->
+        <div class="modal fade" id="punishmentsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title"><i class="bi bi-x-circle"></i> العقوبات</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body"><div class="table-responsive"><table class="table table-striped"><thead><tr><th>الاسم</th><th>النسبة</th><th>العقوبة</th><th>الحالة</th></tr></thead><tbody id="punishmentsTableBody"></tbody></table></div></div>
+        </div></div></div>
+
+        <!-- Share Device Modal -->
+        <div class="modal fade" id="shareDeviceModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title"><i class="bi bi-qr-code"></i> مشاركة الجهاز</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body text-center">
+                <p class="text-muted mb-3">امسح هذا الرمز من جهاز آخر للاتصال مباشرة</p>
+                <div id="shareQRCode" style="margin:0 auto;max-width:250px;"></div>
+                <div class="mt-3">
+                    <small class="text-muted">أو انسخ الرابط:</small>
+                    <div class="input-group mt-2">
+                        <input type="text" class="form-control" id="shareLink" readonly style="direction:ltr;text-align:left;font-size:0.8rem;">
+                        <button class="btn btn-outline-primary" onclick="copyShareLink()"><i class="bi bi-clipboard"></i></button>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success btn-sm" onclick="shareViaWhatsApp()"><i class="bi bi-whatsapp"></i> مشاركة عبر واتساب</button>
+                </div>
+            </div>
+        </div></div></div>
+
+        <!-- Task Completion Modal -->
+        <div class="modal fade" id="taskCompletionModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">إكمال المهام</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <h6 id="modalDate"></h6><h4 id="modalUser"></h4>
+                <ul id="modalTaskList" class="list-group"></ul>
+                <button class="btn btn-primary w-100 mt-3" onclick="$('#taskCompletionModal').modal('hide')">
+                    <i class="bi bi-check-lg"></i> تم
+                </button>
+            </div>
+        </div></div></div>
+    </div>
+
+    <!-- ==================== SETTINGS OVERLAY ==================== -->
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-panel">
+            <header class="settings-header">
+                <button class="btn btn-link settings-back" id="btnCloseSettings">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+                <h3 class="settings-title">الإعدادات</h3>
+            </header>
+
+            <div class="settings-body">
+                <!-- User Management -->
+                <div class="settings-section" id="userManagement">
+                    <h3><i class="bi bi-people"></i> إدارة المستخدمين</h3>
+                    <p class="text-muted mb-3"><i class="bi bi-info-circle"></i> الرمز الشخصي (PIN) يتحقق من هوية كل فرد</p>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-5"><input type="text" class="form-control" id="userName" placeholder="اسم المستخدم"></div>
+                        <div class="col-12 col-md-3"><input type="password" class="form-control" id="userPin" placeholder="PIN (4-6 أرقام)" maxlength="6" inputmode="numeric"></div>
+                        <div class="col-12 col-md-4"><button class="btn btn-primary w-100" onclick="addUser()"><i class="bi bi-plus-circle"></i> إضافة مستخدم</button></div>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped"><thead><tr><th>الاسم</th><th>الرمز</th><th>الإجراءات</th></tr></thead><tbody id="usersTable"></tbody></table>
+                    </div>
+                </div>
+
+                <!-- Task Management -->
+                <div class="settings-section" id="taskManagement">
+                    <h3><i class="bi bi-list-task"></i> إدارة المهام</h3>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-4"><input type="text" class="form-control" id="taskName" placeholder="اسم المهمة"></div>
+                        <div class="col-6 col-md-3"><input type="color" class="form-control form-control-color" id="taskColor" value="#3498db"></div>
+                        <div class="col-6 col-md-5"><button class="btn btn-primary w-100" onclick="addTask()"><i class="bi bi-plus-circle"></i> إضافة مهمة</button></div>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped"><thead><tr><th>المهمة</th><th>اللون</th><th>الإجراءات</th></tr></thead><tbody id="tasksTable"></tbody></table>
+                    </div>
+                </div>
+
+                <!-- Device Name & Connected Devices -->
+                <div class="settings-section">
+                    <h3><i class="bi bi-phone"></i> الأجهزة المتصلة</h3>
+                    <div class="row g-2 mb-3">
+                        <div class="col-12 col-md-8">
+                            <input type="text" class="form-control" id="deviceNameInput" placeholder="اسم هذا الجهاز (مثال: هاتف الأب)">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <button class="btn btn-primary w-100" onclick="saveDeviceName()"><i class="bi bi-check-lg"></i> حفظ الاسم</button>
+                        </div>
+                        <div class="col-12"><small class="text-muted">يظهر للأجهزة الأخرى عند الاتصال</small></div>
+                    </div>
+                    <div id="connectedDevicesList">
+                        <p class="text-muted">جاري تحميل الأجهزة...</p>
+                    </div>
+                </div>
+
+                <!-- Schedule Settings -->
+                <div class="settings-section">
+                    <h3><i class="bi bi-sliders"></i> إعدادات الجدول</h3>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <label for="gracePeriod" class="form-label">فترة صلاحية PIN (دقائق)</label>
+                            <input type="number" class="form-control" id="gracePeriod" min="1" max="10" value="1">
+                            <small class="text-muted">بعد إدخال PIN، لن يُطلب مرة أخرى خلال هذه الفترة</small>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label for="startDate" class="form-label">تاريخ بداية الجدول</label>
+                            <input type="date" class="form-control" id="startDate">
+                            <small class="text-muted">الأيام قبل هذا التاريخ لن تُحسب في الإحصائيات</small>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary mt-3" onclick="saveScheduleSettings()">
+                        <i class="bi bi-save"></i> حفظ الإعدادات
+                    </button>
+                </div>
+
+                <!-- Rewards & Punishments Config -->
+                <div class="settings-section">
+                    <h3><i class="bi bi-trophy"></i> المكافآت والعقوبات</h3>
+
+                    <h6 class="mt-3 mb-2"><i class="bi bi-calendar-week"></i> مكافأة الأسبوع</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <label class="form-label">مبلغ المكافأة الأسبوعية (ريال)</label>
+                            <input type="number" class="form-control" id="weeklyRewardAmount" min="0" step="10">
+                        </div>
+                    </div>
+
+                    <h6 class="mt-3 mb-2"><i class="bi bi-calendar-month"></i> مكافأة الشهر</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <label class="form-label">مبلغ المكافأة الشهرية (ريال)</label>
+                            <input type="number" class="form-control" id="monthlyRewardAmount" min="0" step="50">
+                        </div>
+                    </div>
+
+                    <h6 class="mt-3 mb-2"><i class="bi bi-exclamation-circle"></i> عتبات العقوبات</h6>
+                    <div id="punishmentThresholds"></div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="addPunishmentThreshold()">
+                        <i class="bi bi-plus"></i> إضافة عتبة
+                    </button>
+
+                    <button class="btn btn-primary mt-3 w-100" onclick="saveRewardSettings()">
+                        <i class="bi bi-save"></i> حفظ إعدادات المكافآت والعقوبات
+                    </button>
+                </div>
+
+                <!-- Data Management -->
+                <div class="settings-section">
+                    <h3><i class="bi bi-database"></i> إدارة البيانات</h3>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-danger" onclick="resetData()"><i class="bi bi-arrow-clockwise"></i> إعادة تعيين البيانات</button>
+                    </div>
+                    <small class="text-muted d-block mt-2">حذف جميع التقييمات والمكافآت (المهام والمستخدمين يظلون)</small>
+                </div>
+            </div>
+        </div>
+        <div class="settings-backdrop" id="settingsBackdrop"></div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="libs/bootstrap.bundle.min.js"></script>
+    <script src="libs/jquery-3.7.0.min.js"></script>
+    <script src="libs/chart.umd.min.js"></script>
+    <script src="libs/moment.min.js"></script>
+    <script src="libs/moment-ar.min.js"></script>
+    <script src="libs/gun.js"></script>
+    <script src="libs/sweetalert2.all.min.js"></script>
+    <script src="libs/qrcode.min.js"></script>
+    <script src="libs/trystero-bundle.js"></script>
+    <script src="p2p.js?v=5"></script>
+    <script src="app.js?v=10"></script>
+    <script src="config.js?v=10"></script>
+    <!-- PWA Install -->
+    <script>
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('installHeaderLink').style.display = 'inline';
+    });
+    function installPWA() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((result) => {
+            if (result.outcome === 'accepted') {
+                document.getElementById('installHeaderLink').style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+    }
+    window.addEventListener('appinstalled', () => {
+        document.getElementById('installHeaderLink').style.display = 'none';
+        deferredPrompt = null;
+    });
+    </script>
+</body>
+</html>

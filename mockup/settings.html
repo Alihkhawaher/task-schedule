@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup — الإعدادات (التصميم الجديد)</title>
+    <link href="../app/libs/tajawal.css" rel="stylesheet">
+    <link href="../app/libs/bootstrap.min.css" rel="stylesheet">
+    <link href="../app/libs/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Tajawal', sans-serif; background: var(--bg); color: var(--text); }
+
+        /* ========== DIMMED BACKGROUND ========== */
+        .bg-dimmed {
+            filter: blur(2px) brightness(0.7);
+            padding: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+            pointer-events: none;
+        }
+
+        /* ========== SETTINGS OVERLAY ========== */
+        .settings-overlay {
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 1050;
+            display: flex;
+        }
+        .settings-backdrop {
+            flex: 1;
+            background: rgba(0,0,0,0.4);
+        }
+        .settings-panel {
+            width: 480px;
+            max-width: 100%;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 30px rgba(0,0,0,0.15);
+        }
+
+        /* Settings Header */
+        .settings-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            color: white;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .settings-back {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .settings-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* ========== SETTINGS SECTIONS ========== */
+        .settings-section {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .section-icon.purple { background: #eef2ff; color: var(--primary); }
+        .section-icon.green { background: #ecfdf5; color: var(--success); }
+        .section-icon.orange { background: #fffbeb; color: var(--warning); }
+        .section-icon.red { background: #fef2f2; color: var(--danger); }
+        .section-icon.blue { background: #dbeafe; color: #3b82f6; }
+        .section-title { font-size: 0.95rem; font-weight: 700; }
+
+        /* ========== USER LIST ========== */
+        .user-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: #f8fafc;
+            transition: background 0.15s;
+        }
+        .user-card:hover { background: #f1f5f9; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: white;
+        }
+        .user-name { font-weight: 600; font-size: 0.9rem; }
+        .user-pin { font-size: 0.75rem; color: var(--text-muted); }
+        .user-actions { display: flex; gap: 4px; }
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.85rem;
+        }
+        .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .icon-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+        /* ========== ADD USER FORM ========== */
+        .add-form { display: flex; gap: 8px; margin-top: 12px; }
+        .add-form input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.85rem;
+            transition: border-color 0.2s;
+        }
+        .add-form input:focus { outline: none; border-color: var(--primary); }
+        .add-btn {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            transition: background 0.2s;
+        }
+        .add-btn:hover { background: var(--primary-light); }
+
+        /* ========== TASK LIST ========== */
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            background: #f8fafc;
+        }
+        .task-info { display: flex; align-items: center; gap: 10px; }
+        .task-color { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.08); }
+
+        /* ========== RELAY CONFIG ========== */
+        .relay-notice {
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 0.82rem;
+            color: #4338ca;
+            line-height: 1.6;
+        }
+        .relay-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.85rem;
+            direction: ltr;
+            text-align: left;
+            margin-bottom: 10px;
+        }
+        .relay-input:focus { outline: none; border-color: var(--primary); }
+        .relay-actions { display: flex; gap: 8px; }
+        .btn-primary {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .btn-outline {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: white;
+            color: var(--text);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* ========== DANGER ZONE ========== */
+        .danger-btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1.5px solid #fecaca;
+            background: #fef2f2;
+            color: var(--danger);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            transition: all 0.2s;
+        }
+        .danger-btn:hover { background: var(--danger); color: white; }
+
+        /* ========== MOBILE ========== */
+        @media (max-width: 768px) {
+            .settings-panel { width: 100%; }
+            .settings-backdrop { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- DIMMED BACKGROUND (simulated) -->
+    <div class="bg-dimmed">
+        <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:14px 20px;border-radius:12px;margin-bottom:16px;">
+            <strong>جدول المهام العائلي</strong> — يوليو 2026
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div style="background:white;padding:16px;border-radius:14px;"><strong>500 ريال</strong><br><small>المكافآت</small></div>
+            <div style="background:white;padding:16px;border-radius:14px;"><strong>1</strong><br><small>العقوبات</small></div>
+            <div style="background:white;padding:16px;border-radius:14px;"><strong>78%</strong><br><small>الإنجاز</small></div>
+            <div style="background:white;padding:16px;border-radius:14px;"><strong>الأسبوع 2</strong><br><small>الحالي</small></div>
+        </div>
+        <div style="background:white;border-radius:16px;padding:20px;text-align:center;color:#94a3b8;">
+            جدول المهام... (خلفية معتمة)
+        </div>
+    </div>
+
+    <!-- SETTINGS OVERLAY -->
+    <div class="settings-overlay">
+        <div class="settings-backdrop"></div>
+        <div class="settings-panel">
+            <header class="settings-header">
+                <button class="settings-back"><i class="bi bi-arrow-right"></i> الإعدادات</button>
+                <button class="icon-btn" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:white;"><i class="bi bi-box-arrow-left"></i></button>
+            </header>
+
+            <div class="settings-body">
+
+                <!-- USERS -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <div class="section-icon purple"><i class="bi bi-people"></i></div>
+                        <div class="section-title">إدارة المستخدمين</div>
+                    </div>
+
+                    <div class="user-card">
+                        <div class="user-info">
+                            <div class="user-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">أ</div>
+                            <div><div class="user-name">أحمد</div><div class="user-pin">PIN: ••••</div></div>
+                        </div>
+                        <div class="user-actions">
+                            <button class="icon-btn"><i class="bi bi-key"></i></button>
+                            <button class="icon-btn danger"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="user-card">
+                        <div class="user-info">
+                            <div class="user-avatar" style="background:linear-gradient(135deg,#ec4899,#f472b6);">س</div>
+                            <div><div class="user-name">سارة</div><div class="user-pin">PIN: ••••</div></div>
+                        </div>
+                        <div class="user-actions">
+                            <button class="icon-btn"><i class="bi bi-key"></i></button>
+                            <button class="icon-btn danger"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="user-card">
+                        <div class="user-info">
+                            <div class="user-avatar" style="background:linear-gradient(135deg,#10b981,#34d399);">م</div>
+                            <div><div class="user-name">محمد</div><div class="user-pin">PIN: غير محدد</div></div>
+                        </div>
+                        <div class="user-actions">
+                            <button class="icon-btn"><i class="bi bi-key"></i></button>
+                            <button class="icon-btn danger"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="add-form">
+                        <input type="text" placeholder="اسم المستخدم">
+                        <input type="password" placeholder="PIN" style="max-width:100px;">
+                        <button class="add-btn"><i class="bi bi-plus"></i> إضافة</button>
+                    </div>
+                </div>
+
+                <!-- TASKS -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <div class="section-icon green"><i class="bi bi-list-task"></i></div>
+                        <div class="section-title">إدارة المهام</div>
+                    </div>
+
+                    <div class="task-item">
+                        <div class="task-info">
+                            <div class="task-color" style="background:#3b82f6;"></div>
+                            <span>الصلاة</span>
+                        </div>
+                        <button class="icon-btn danger"><i class="bi bi-trash"></i></button>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-info">
+                            <div class="task-color" style="background:#22c55e;"></div>
+                            <span>القرآن</span>
+                        </div>
+                        <button class="icon-btn danger"><i class="bi bi-trash"></i></button>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-info">
+                            <div class="task-color" style="background:#f59e0b;"></div>
+                            <span>الواجبات</span>
+                        </div>
+                        <button class="icon-btn danger"><i class="bi bi-trash"></i></button>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-info">
+                            <div class="task-color" style="background:#ec4899;"></div>
+                            <span>الرياضة</span>
+                        </div>
+                        <button class="icon-btn danger"><i class="bi bi-trash"></i></button>
+                    </div>
+
+                    <div class="add-form">
+                        <input type="text" placeholder="اسم المهمة">
+                        <input type="color" value="#3b82f6" style="width:44px;height:38px;border:1.5px solid #e2e8f0;border-radius:10px;cursor:pointer;">
+                        <button class="add-btn"><i class="bi bi-plus"></i> إضافة</button>
+                    </div>
+                </div>
+
+                <!-- P2P RELAY -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <div class="section-icon blue"><i class="bi bi-hdd-network"></i></div>
+                        <div class="section-title">P2P والخادم المحلي</div>
+                    </div>
+
+                    <div class="relay-notice">
+                        <i class="bi bi-shield-check"></i> <strong>خصوصيتك أولاً:</strong> هذا التطبيق يعمل بدون أي خدمة خارجية. بياناتك تبقى على شبكتك المحلية. للمزامنة بين الأجهزة، شغّل <code>node relay.js</code> على جهاز واحد.
+                    </div>
+
+                    <input type="text" class="relay-input" placeholder="http://192.168.1.5:8765/gun" value="http://192.168.1.5:8765/gun">
+                    <div class="relay-actions">
+                        <button class="btn-primary"><i class="bi bi-save"></i> حفظ والاتصال</button>
+                        <button class="btn-outline"><i class="bi bi-wifi"></i> اختبار</button>
+                    </div>
+                </div>
+
+                <!-- SCHEDULE SETTINGS -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <div class="section-icon orange"><i class="bi bi-sliders"></i></div>
+                        <div class="section-title">إعدادات الجدول</div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                        <div>
+                            <label style="font-size:0.82rem;font-weight:600;margin-bottom:4px;display:block;">فترة PIN (دقائق)</label>
+                            <input type="number" value="1" min="1" max="10" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-family:'Tajawal',sans-serif;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.82rem;font-weight:600;margin-bottom:4px;display:block;">تاريخ البداية</label>
+                            <input type="date" value="2026-07-01" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid #e2e8f0;font-family:'Tajawal',sans-serif;">
+                        </div>
+                    </div>
+                    <button class="btn-primary"><i class="bi bi-save"></i> حفظ الإعدادات</button>
+                </div>
+
+                <!-- DANGER ZONE -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <div class="section-icon red"><i class="bi bi-database"></i></div>
+                        <div class="section-title">إدارة البيانات</div>
+                    </div>
+                    <button class="danger-btn"><i class="bi bi-arrow-clockwise"></i> إعادة تعيين البيانات</button>
+                    <p style="font-size:0.75rem;color:#94a3b8;margin-top:8px;">حذف جميع التقييمات والمكافآت (المهام والمستخدمين يظلون)</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

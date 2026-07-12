@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup — جدول المهام (التصميم الجديد)</title>
+    <link href="../app/libs/tajawal.css" rel="stylesheet">
+    <link href="../app/libs/bootstrap.min.css" rel="stylesheet">
+    <link href="../app/libs/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* ========== HEADER ========== */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            color: white;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-title { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .header-left { display: flex; align-items: center; gap: 8px; }
+        .sync-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .header-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .header-btn:hover { background: rgba(255,255,255,0.25); }
+        .date-chips { display: flex; gap: 4px; }
+        .date-chip {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .date-chip.active { background: white; color: var(--primary); font-weight: 600; }
+
+        /* ========== CONTENT ========== */
+        .content { padding: 16px; max-width: 1200px; margin: 0 auto; }
+
+        /* ========== QUICK ACTIONS ========== */
+        .quick-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .action-btn:hover { border-color: var(--primary); color: var(--primary); box-shadow: 0 2px 8px rgba(99,102,241,0.1); }
+        .action-btn i { font-size: 1rem; }
+
+        /* ========== TASK LEGEND ========== */
+        .legend { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .legend-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        /* ========== SCHEDULE TABLE ========== */
+        .schedule-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+        .schedule-wrapper { overflow-x: auto; }
+        .schedule-table { width: 100%; border-collapse: collapse; }
+        .schedule-table th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .schedule-table th.date-col {
+            position: sticky;
+            right: 0;
+            z-index: 11;
+            background: #f8fafc;
+            min-width: 120px;
+        }
+        .schedule-table td {
+            padding: 10px 16px;
+            text-align: center;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s;
+        }
+        .schedule-table td.date-col {
+            position: sticky;
+            right: 0;
+            z-index: 5;
+            background: white;
+            font-size: 0.85rem;
+            color: var(--text);
+            min-width: 120px;
+        }
+
+        /* Date cell layout: number + name aligned */
+        .date-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .date-num {
+            font-weight: 700;
+            font-size: 1rem;
+            min-width: 24px;
+            text-align: center;
+            color: var(--text);
+        }
+        .date-name {
+            font-weight: 500;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            min-width: 50px;
+            text-align: right;
+        }
+
+        /* Today */
+        .today-row .date-num {
+            color: var(--primary);
+        }
+        .today-row .date-name {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .today-row td.date-col {
+            background: #eef2ff;
+        }
+        .today-col { background: #eef2ff !important; }
+
+        /* Week header */
+        .week-row td {
+            background: #f0f0ff;
+            padding: 8px 16px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+        }
+
+        /* Completion cells */
+        .status-cell {
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .status-cell:hover { transform: scale(1.15); }
+        .status-cell svg { display: block; margin: 0 auto; }
+
+        /* Completion colors */
+        .cell-100 { background: #ecfdf5; }
+        .cell-80 { background: #f0fdf4; }
+        .cell-60 { background: #fffbeb; }
+        .cell-40 { background: #fef3c7; }
+        .cell-20 { background: #fef2f2; }
+        .cell-0 { background: transparent; }
+
+        /* Before start */
+        .before-start { opacity: 0.3; cursor: default; }
+
+        /* ========== STATS BAR ========== */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat-item {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .stat-icon-wrap {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+        .stat-icon-wrap.green { background: #ecfdf5; color: var(--success); }
+        .stat-icon-wrap.yellow { background: #fffbeb; color: var(--warning); }
+        .stat-icon-wrap.blue { background: #eef2ff; color: var(--primary); }
+        .stat-icon-wrap.red { background: #fef2f2; color: var(--danger); }
+        .stat-value { font-size: 1.3rem; font-weight: 700; }
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* ========== SVG ICON LEGEND ========== */
+        .icon-legend {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            padding: 10px 14px;
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .icon-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .icon-legend-item svg { flex-shrink: 0; }
+
+        /* ========== MOBILE ========== */
+        @media (max-width: 768px) {
+            .stats-bar { grid-template-columns: 1fr 1fr; }
+            .stat-item { padding: 12px; }
+            .stat-value { font-size: 1.1rem; }
+            .header-title { font-size: 0.95rem; }
+            .schedule-table th, .schedule-table td { padding: 8px 10px; }
+            .status-cell svg { width: 28px; height: 28px; }
+            .date-num { font-size: 0.9rem; }
+            .date-name { font-size: 0.7rem; }
+        }
+        @media (max-width: 480px) {
+            .stats-bar { grid-template-columns: 1fr; }
+            .quick-actions { gap: 4px; }
+            .action-btn { font-size: 0.75rem; padding: 6px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="header-right">
+            <div class="header-title">
+                <i class="bi bi-calendar-check"></i>
+                جدول المهام العائلي
+            </div>
+            <span class="sync-dot" title="متصل"></span>
+        </div>
+        <div class="header-left">
+            <div class="date-chips">
+                <span class="date-chip active">يوليو</span>
+                <span class="date-chip">2026</span>
+            </div>
+            <button class="header-btn"><i class="bi bi-gear"></i></button>
+            <button class="header-btn"><i class="bi bi-box-arrow-left"></i></button>
+        </div>
+    </header>
+
+    <div class="content">
+
+        <!-- STATS BAR -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-icon-wrap green"><i class="bi bi-trophy"></i></div>
+                <div><div class="stat-value">500 ريال</div><div class="stat-label">المكافآت</div></div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon-wrap red"><i class="bi bi-exclamation-triangle"></i></div>
+                <div><div class="stat-value">1</div><div class="stat-label">العقوبات</div></div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon-wrap blue"><i class="bi bi-percent"></i></div>
+                <div><div class="stat-value">78%</div><div class="stat-label">متوسط الإنجاز</div></div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon-wrap yellow"><i class="bi bi-calendar-week"></i></div>
+                <div><div class="stat-value">الأسبوع 2</div><div class="stat-label">الأسبوع الحالي</div></div>
+            </div>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="quick-actions">
+            <button class="action-btn"><i class="bi bi-bar-chart"></i> الإحصائيات</button>
+            <button class="action-btn"><i class="bi bi-trophy"></i> المكافآت</button>
+            <button class="action-btn"><i class="bi bi-exclamation-triangle"></i> العقوبات</button>
+        </div>
+
+        <!-- ICON LEGEND -->
+        <div class="icon-legend">
+            <div class="icon-legend-item">
+                <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                ممتاز (100%)
+            </div>
+            <div class="icon-legend-item">
+                <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#34d399"/><circle cx="11" cy="11" r="6" fill="white"/><circle cx="11" cy="11" r="3" fill="#34d399"/></svg>
+                جيد جداً (80%)
+            </div>
+            <div class="icon-legend-item">
+                <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#fbbf24"/><path d="M11 5 A6 6 0 0 1 11 17" fill="white" opacity="0.5"/><circle cx="11" cy="11" r="3" fill="white"/></svg>
+                جيد (60%)
+            </div>
+            <div class="icon-legend-item">
+                <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#f97316" opacity="0.8"/><circle cx="11" cy="11" r="7" fill="white" opacity="0.4"/><circle cx="11" cy="11" r="4" fill="#f97316"/></svg>
+                ضعيف (40%)
+            </div>
+            <div class="icon-legend-item">
+                <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#ef4444" opacity="0.6"/><circle cx="11" cy="11" r="10" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4 3"/></svg>
+                مقبول (20%)
+            </div>
+            <div class="icon-legend-item">
+                <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg>
+                لم يُنجز
+            </div>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="legend">
+            <div class="legend-chip" style="background:#dbeafe;"><div class="legend-dot" style="background:#3b82f6;"></div> الصلاة</div>
+            <div class="legend-chip" style="background:#dcfce7;"><div class="legend-dot" style="background:#22c55e;"></div> القرآن</div>
+            <div class="legend-chip" style="background:#fef3c7;"><div class="legend-dot" style="background:#f59e0b;"></div> الواجبات</div>
+            <div class="legend-chip" style="background:#fce7f3;"><div class="legend-dot" style="background:#ec4899;"></div> الرياضة</div>
+        </div>
+
+        <!-- SCHEDULE TABLE -->
+        <div class="schedule-card">
+            <div class="schedule-wrapper">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th class="date-col">التاريخ</th>
+                            <th>أحمد</th>
+                            <th>سارة</th>
+                            <th>محمد</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Week 1 -->
+                        <tr class="week-row"><td colspan="4">الأسبوع ١</td></tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">1</span><span class="date-name">الأحد</span></div></td>
+                            <td class="status-cell cell-100"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+                            <td class="status-cell cell-80"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#34d399"/><circle cx="11" cy="11" r="6" fill="white"/><circle cx="11" cy="11" r="3" fill="#34d399"/></svg></td>
+                            <td class="status-cell cell-40"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#f97316" opacity="0.8"/><circle cx="11" cy="11" r="7" fill="white" opacity="0.4"/><circle cx="11" cy="11" r="4" fill="#f97316"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">2</span><span class="date-name">الاثنين</span></div></td>
+                            <td class="status-cell cell-60"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#fbbf24"/><path d="M11 5 A6 6 0 0 1 11 17" fill="white" opacity="0.5"/><circle cx="11" cy="11" r="3" fill="white"/></svg></td>
+                            <td class="status-cell cell-100"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+                            <td class="status-cell cell-80"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#34d399"/><circle cx="11" cy="11" r="6" fill="white"/><circle cx="11" cy="11" r="3" fill="#34d399"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">3</span><span class="date-name">الثلاثاء</span></div></td>
+                            <td class="status-cell cell-100"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+                            <td class="status-cell cell-60"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#fbbf24"/><path d="M11 5 A6 6 0 0 1 11 17" fill="white" opacity="0.5"/><circle cx="11" cy="11" r="3" fill="white"/></svg></td>
+                            <td class="status-cell cell-20"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#ef4444" opacity="0.6"/><circle cx="11" cy="11" r="10" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4 3"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">4</span><span class="date-name">الأربعاء</span></div></td>
+                            <td class="status-cell cell-80"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#34d399"/><circle cx="11" cy="11" r="6" fill="white"/><circle cx="11" cy="11" r="3" fill="#34d399"/></svg></td>
+                            <td class="status-cell cell-100"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+                            <td class="status-cell cell-60"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#fbbf24"/><path d="M11 5 A6 6 0 0 1 11 17" fill="white" opacity="0.5"/><circle cx="11" cy="11" r="3" fill="white"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">5</span><span class="date-name">الخميس</span></div></td>
+                            <td class="status-cell cell-100"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+                            <td class="status-cell cell-80"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#34d399"/><circle cx="11" cy="11" r="6" fill="white"/><circle cx="11" cy="11" r="3" fill="#34d399"/></svg></td>
+                            <td class="status-cell cell-100"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">6</span><span class="date-name">الجمعة</span></div></td>
+                            <td class="status-cell cell-40"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#f97316" opacity="0.8"/><circle cx="11" cy="11" r="7" fill="white" opacity="0.4"/><circle cx="11" cy="11" r="4" fill="#f97316"/></svg></td>
+                            <td class="status-cell cell-60"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#fbbf24"/><path d="M11 5 A6 6 0 0 1 11 17" fill="white" opacity="0.5"/><circle cx="11" cy="11" r="3" fill="white"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">7</span><span class="date-name">السبت</span></div></td>
+                            <td class="status-cell cell-80"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#34d399"/><circle cx="11" cy="11" r="6" fill="white"/><circle cx="11" cy="11" r="3" fill="#34d399"/></svg></td>
+                            <td class="status-cell cell-100"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+                            <td class="status-cell cell-40"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#f97316" opacity="0.8"/><circle cx="11" cy="11" r="7" fill="white" opacity="0.4"/><circle cx="11" cy="11" r="4" fill="#f97316"/></svg></td>
+                        </tr>
+
+                        <!-- Week 2 -->
+                        <tr class="week-row"><td colspan="4">الأسبوع ٢</td></tr>
+                        <tr class="today-row">
+                            <td class="date-col"><div class="date-cell"><span class="date-num">8</span><span class="date-name">الأحد</span></div></td>
+                            <td class="status-cell cell-80 today-col"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#34d399"/><circle cx="11" cy="11" r="6" fill="white"/><circle cx="11" cy="11" r="3" fill="#34d399"/></svg></td>
+                            <td class="status-cell cell-60 today-col"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#fbbf24"/><path d="M11 5 A6 6 0 0 1 11 17" fill="white" opacity="0.5"/><circle cx="11" cy="11" r="3" fill="white"/></svg></td>
+                            <td class="status-cell cell-100 today-col"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">9</span><span class="date-name">الاثنين</span></div></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">10</span><span class="date-name">الثلاثاء</span></div></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">11</span><span class="date-name">الأربعاء</span></div></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">12</span><span class="date-name">الخميس</span></div></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">13</span><span class="date-name">الجمعة</span></div></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                        </tr>
+                        <tr>
+                            <td class="date-col"><div class="date-cell"><span class="date-num">14</span><span class="date-name">السبت</span></div></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                            <td class="status-cell cell-0"><svg width="32" height="32" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

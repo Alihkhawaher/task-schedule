@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Database files
+*.db
+*.db-journal
+
+# Environment
+.env
+.jwt-secret
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
