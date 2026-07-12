@@ -275,6 +275,7 @@ function exportData() {
                 exportedAt: new Date().toISOString(),
                 familyCode: familyCode,
                 familyName: familyName || sessionStorage.getItem('familyName') || '',
+                deviceName: (typeof P2P !== 'undefined' ? P2P.getDeviceName() : '') || '',
                 data: {
                     users: localUsers || {},
                     tasks: localTasks || {},
@@ -286,6 +287,24 @@ function exportData() {
                 },
                 settings: {}
             };
+
+            // Include room ID for full backup
+            if (typeof P2P !== 'undefined') {
+                const roomId = P2P.getStoredRoomId(familyCode);
+                if (roomId) exportObj.roomId = roomId;
+            }
+
+            // Include approved tokens for full backup
+            if (typeof P2P !== 'undefined') {
+                const tokens = P2P.getApprovedTokens();
+                if (Object.keys(tokens).length > 0) exportObj.approvedTokens = tokens;
+            }
+
+            // Include approval token (this device's token for reconnection)
+            if (typeof P2P !== 'undefined') {
+                const approvalToken = P2P.getStoredApprovalToken();
+                if (approvalToken) exportObj.approvalToken = approvalToken;
+            }
 
             // Try to get settings from Gun.js
             family.get('settings').once((settings) => {
