@@ -428,16 +428,16 @@ async function requirePinForAction(callback) {
     // Check grace period
     if (lastPinVerification && (now - lastPinVerification) < pinGracePeriod) {
         lastPinVerification = Date.now(); // Refresh timer
-        callback();
+        await callback();
         return;
     }
 
     // Need PIN — show user selector + PIN prompt
     const allUsers = Object.entries(localUsers).map(([id, u]) => ({ id, ...u }));
-    if (allUsers.length === 0) { callback(); return; }
+    if (allUsers.length === 0) { await callback(); return; }
 
     const usersWithPins = allUsers.filter(u => u.pinHash);
-    if (usersWithPins.length === 0) { callback(); return; }
+    if (usersWithPins.length === 0) { await callback(); return; }
 
     const inputOptions = {};
     allUsers.forEach(u => { inputOptions[u.id] = u.name; });
@@ -458,7 +458,7 @@ async function requirePinForAction(callback) {
     const selectedUser = localUsers[formValues];
     if (!selectedUser || !selectedUser.pinHash) {
         lastPinVerification = Date.now();
-        callback();
+        await callback();
         return;
     }
 
@@ -482,17 +482,17 @@ async function requirePinForAction(callback) {
 
     if (pin) {
         lastPinVerification = Date.now(); // Refresh grace period
-        callback();
+        await callback();
     }
 }
 
 // Require PIN ALWAYS (no grace period) — for destructive actions like reset
 async function requirePinAlways(callback) {
     const allUsers = Object.entries(localUsers).map(([id, u]) => ({ id, ...u }));
-    if (allUsers.length === 0) { callback(); return; }
+    if (allUsers.length === 0) { await callback(); return; }
 
     const usersWithPins = allUsers.filter(u => u.pinHash);
-    if (usersWithPins.length === 0) { callback(); return; }
+    if (usersWithPins.length === 0) { await callback(); return; }
 
     const inputOptions = {};
     allUsers.forEach(u => { inputOptions[u.id] = u.name; });
@@ -513,7 +513,7 @@ async function requirePinAlways(callback) {
 
     const selectedUser = localUsers[formValues];
     if (!selectedUser || !selectedUser.pinHash) {
-        callback();
+        await callback();
         return;
     }
 
@@ -537,7 +537,7 @@ async function requirePinAlways(callback) {
     });
 
     if (pin) {
-        callback();
+        await callback();
         // Note: does NOT update lastPinVerification — no grace period for this action
     }
 }

@@ -380,6 +380,11 @@ async function updateStatistics() {
     $('#activePunishments').text(activePunishments);
     $('#averageCompletion').text(`${avg}%`);
     $('#currentWeek').text(Math.ceil(cd / 7));
+    // Also update statistics modal
+    $('#modalTotalRewards').text(`${totalRewards} ريال`);
+    $('#modalActivePunishments').text(activePunishments);
+    $('#modalAverageCompletion').text(`${avg}%`);
+    $('#modalCurrentWeek').text(Math.ceil(cd / 7));
 }
 
 function calcCompletionRate(userId, month, year) {
