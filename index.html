@@ -299,8 +299,32 @@
             onMessage: function(peerId, message) {
                 // Handle approval — admin approved us
                 if (message.type === 'connection-approved') {
-                    console.log('[Login] Approved by admin');
+                    console.log('[Login] Approved by admin, waiting for data...');
                     p2pConnected = true;
+                    // Show downloading state
+                    showConnectionStep('connStepWaiting');
+                    document.getElementById('pageSubtitle').textContent = 'تمت الموافقة! جاري تحميل البيانات...';
+                    // If family data doesn't arrive within 3s, request it explicitly
+                    // This handles mobile WebRTC timing issues
+                    if (!receivedFamilyData) {
+                        let dataRetryCount = 0;
+                        const dataRetryInterval = setInterval(() => {
+                            dataRetryCount++;
+                            if (receivedFamilyData) {
+                                clearInterval(dataRetryInterval);
+                                return;
+                            }
+                            if (dataRetryCount > 5) {
+                                clearInterval(dataRetryInterval);
+                                console.log('[Login] No data after retries, giving up');
+                                return;
+                            }
+                            console.log('[Login] Data not received yet, requesting... (attempt ' + dataRetryCount + ')');
+                            if (typeof P2P !== 'undefined' && P2P.actions.request) {
+                                P2P.requestFamilyData(peerId);
+                            }
+                        }, 3000);
+                    }
                 }
                 // Handle rejection — admin rejected us
                 if (message.type === 'connection-rejected') {
@@ -309,6 +333,7 @@
                 }
                 // Handle family data sync
                 if (message.type === 'family-sync') {
+                    console.log('[Login] Family data received');
                     receivedFamilyData = message;
                     handleFamilyDataReceived(message);
                 }
