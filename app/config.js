@@ -465,6 +465,7 @@ function importData(event) {
                     users: imported.data.users || {},
                     tasks: imported.data.tasks || {},
                     completions: imported.data.completions || {},
+                    events: imported.data.events || {},
                     timestamp: Date.now()
                 };
                 localStorage.setItem(storageKey, JSON.stringify(dataToStore));

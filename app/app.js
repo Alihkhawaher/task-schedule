@@ -419,6 +419,7 @@ function openDayPanel(d, m, y) {
     for (const u of users) {
         const tasks = tasksForUserOnDate(u.id, y, m, d);
         if (tasks.length === 0) continue;
+        hasTasks = true;
         const pct = pctForUserOnDate(u.id, y, m, d);
         html += `<div class="day-user-section">
             <div class="day-user-head">
@@ -437,7 +438,7 @@ function openDayPanel(d, m, y) {
         }
         html += `</div>`;
     }
-    if (!html) html = '<p style="color:var(--text-muted);text-align:center;padding:30px 0;">لا مهام مجدولة لهذا اليوم</p>';
+    if (!hasTasks) html += '<p style="color:var(--text-muted);text-align:center;padding:30px 0;">لا مهام مجدولة لهذا اليوم</p>';
     $('#dayPanelBody').html(html);
     $('#panelOverlay').addClass('open');
     $('#dayPanel').addClass('open');
@@ -817,4 +818,4 @@ function logout() {
 
 // Keyboard shortcuts
 $(document).keydown(function(e) { if (e.ctrlKey && e.key === 'r') { e.preventDefault(); location.reload(); } });
-$(document).ready(function() { $(document).on('keydown', function(e) { if (e.key === 'Escape') { if ($('#settingsOverlay').hasClass('active')) { closeSettings(); } else { closePanels(); } } }); });
+$(document).ready(function() { $(document).on('keydown', function(e) { if (e.key === 'Escape') { if ($('#eventModal').hasClass('open')) { closeEventForm(); } else if ($('#settingsOverlay').hasClass('active')) { closeSettings(); } else { closePanels(); } } }); });
