@@ -44,14 +44,14 @@ Uses **Trystero** library for WebRTC peer-to-peer connections via Nostr network 
 
 ## Features
 
-- 📅 Monthly schedule with SVG status icons and color-coded completion
+- 📅 **Calendar view** — month and week (7-day) views with color-coded user avatars
+- 👤 **User dashboard** — tap any avatar to see per-task progress bars and overall completion
+- 📋 **Per-user tasks** — each task is assigned to one user with start/end dates and weekday schedule
+- 🔄 **Day detail panel** — tap a day to see all users' tasks with checkboxes
 - 👨‍👩‍👧‍👦 Multi-family support — each family has isolated data
 - 🔄 P2P mesh sync via Trystero/WebRTC — no server needed
 - 🔐 PIN-based check-in with configurable grace period
 - 📊 Start date — schedule begins from your chosen date
-- 🏆 Rewards & punishments — admin-configurable amounts and thresholds, auto-calculated
-- 📊 Statistics & charts — progress visualization
-- 🔑 Recovery codes — password recovery without email
 - 💾 localStorage backup — data persists locally
 - 📷 QR code + share link device discovery
 - 📱 Device naming — name each device (e.g., "هاتف الأب") visible to other peers
@@ -87,7 +87,6 @@ Open shared link → family code auto-fills → enter name + PIN → admin appro
 | Enter settings | ✅ Yes | No |
 | Settings actions | No | Yes (refreshes) |
 | Data reset | ✅ Yes | No |
-| Task cell click | No | Yes (refreshes) |
 
 ## File Structure
 
@@ -96,12 +95,14 @@ Open shared link → family code auto-fills → enter name + PIN → admin appro
 ├── manifest.json           # PWA manifest
 ├── README.md               # This file
 ├── app-design.md           # Comprehensive design document
+├── mockup/
+│   └── calendar.html       # Calendar view mockup
 └── app/
-    ├── index.html          # Main app (schedule + settings overlay)
-    ├── app.js              # Core logic (schedule, stats, rewards, P2P broadcast)
-    ├── config.js           # Settings logic (users, tasks, PIN, device name, rewards)
+    ├── index.html          # Main app (calendar + settings overlay)
+    ├── app.js              # Core logic (calendar, P2P broadcast, task check-in)
+    ├── config.js           # Settings logic (users, per-user tasks, PIN, device name)
     ├── p2p.js              # Trystero/WebRTC P2P module
-    ├── styles.css          # Styles (responsive, RTL support)
+    ├── styles.css          # Styles (calendar, avatars, panels, RTL)
     ├── icons/              # SVG icons for PWA manifest
     └── libs/               # All dependencies (bundled locally)
 ```
@@ -113,10 +114,9 @@ Open shared link → family code auto-fills → enter name + PIN → admin appro
 | P2P | Trystero (Nostr + WebRTC) | Direct browser-to-browser sync |
 | Database | Gun.js (local only) | Local data structure |
 | Auth | Web Crypto API (SHA-256) | PIN hashing |
-| Charts | Chart.js | Progress visualization |
 | UI | Bootstrap 5 + Tajawal | Arabic-first responsive design |
-| QR | qrcode-generator | Device discovery |
-| PWA | Web App Manifest + Service Worker | Installable on mobile and desktop |
+| QR | qrcode.js | Device discovery |
+| PWA | Web App Manifest | Installable on mobile and desktop |
 | Hosting | GitHub Pages | Free static hosting, no server needed |
 
 ## Security Model
