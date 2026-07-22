@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup — التقويم مع المناسبات (Events)</title>
+    <link href="../app/libs/tajawal.css" rel="stylesheet">
+    <link href="../app/libs/bootstrap.min.css" rel="stylesheet">
+    <link href="../app/libs/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --event-color: #8b5cf6;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* ========== HEADER ========== */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            color: white;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-title { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .header-left { display: flex; align-items: center; gap: 8px; }
+        .sync-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .header-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .header-btn:hover { background: rgba(255,255,255,0.25); }
+        .header-btn.event-btn { background: rgba(251, 191, 36, 0.25); border-color: rgba(251, 191, 36, 0.4); }
+        .header-btn.event-btn:hover { background: rgba(251, 191, 36, 0.4); }
+
+        .content { padding: 16px; max-width: 1200px; margin: 0 auto; }
+
+        /* ========== TOOLBAR ========== */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .nav-group { display: flex; align-items: center; gap: 8px; }
+        .nav-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .period-label { font-size: 1.05rem; font-weight: 700; min-width: 170px; text-align: center; }
+        .view-toggle {
+            display: flex;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .view-toggle button {
+            border: none;
+            background: transparent;
+            padding: 8px 20px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .view-toggle button.active { background: var(--primary); color: white; }
+
+        /* ========== COLOR LEGEND ========== */
+        .color-legend {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            padding: 8px 14px;
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            align-items: center;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-separator { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+
+        /* ========== MONTH VIEW ========== */
+        .cal-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+        .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .month-grid .dow {
+            background: #f8fafc;
+            padding: 10px 6px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border);
+        }
+        .day-cell {
+            min-height: 100px;
+            border-bottom: 1px solid #f1f5f9;
+            border-inline-start: 1px solid #f1f5f9;
+            padding: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .day-cell:hover { background: #f8fafc; }
+        .day-cell.other-month { opacity: 0.35; background: #fafbfc; }
+        .day-cell.today { background: #eef2ff; }
+        .day-cell.today .day-num { color: var(--primary); }
+        .day-num { font-size: 0.85rem; font-weight: 700; }
+        .avatar-row { display: flex; flex-wrap: wrap; gap: 4px; }
+
+        /* ========== AVATARS ========== */
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            transition: transform 0.15s;
+        }
+        .avatar:hover { transform: scale(1.2); z-index: 2; position: relative; }
+        .avatar.p100 { background: var(--success); }
+        .avatar.p80  { background: #34d399; }
+        .avatar.p60  { background: #fbbf24; }
+        .avatar.p40  { background: #f97316; }
+        .avatar.p20  { background: var(--danger); }
+        .avatar.p0   { background: #94a3b8; }
+        .avatar.none { background: white; color: #94a3b8; border: 1.5px dashed #cbd5e1; box-shadow: none; }
+
+        /* ========== EVENT INDICATORS (month view) ========== */
+        .event-indicators { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+        .event-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .event-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            padding: 1px 4px;
+            background: #fef3c7;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .event-label i { font-size: 0.55rem; color: #f59e0b; }
+
+        /* ========== WEEK VIEW ========== */
+        .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .week-day {
+            border-inline-start: 1px solid #f1f5f9;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .week-day:first-child { border-inline-start: none; }
+        .week-day-header {
+            padding: 10px 6px;
+            text-align: center;
+            border-bottom: 2px solid var(--border);
+            background: #f8fafc;
+        }
+        .week-day-header.today { background: #eef2ff; }
+        .week-day-header .dow-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
+        .week-day-header .d-num { font-size: 1.1rem; font-weight: 700; }
+        .week-day-header.today .dow-name,
+        .week-day-header.today .d-num { color: var(--primary); }
+        .week-day-body { padding: 8px 6px; display: flex; flex-direction: column; gap: 6px; flex: 1; cursor: pointer; }
+        .week-day-body:hover { background: #f8fafc; }
+        .week-user-block { display: flex; flex-direction: column; gap: 4px; }
+        .week-user-head { display: flex; align-items: center; gap: 5px; }
+        .week-user-name { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); }
+        .task-chip {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: filter 0.15s;
+        }
+        .task-chip:hover { filter: brightness(0.95); }
+        .task-chip.done { text-decoration: line-through; opacity: 0.65; }
+        .task-chip .t-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .task-chip .t-check { margin-inline-start: auto; }
+
+        /* Event chip in week view */
+        .event-chip {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: default;
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+        }
+        .event-chip i { color: #f59e0b; font-size: 0.65rem; }
+        .event-chip .ev-time { font-size: 0.6rem; color: #92400e; margin-inline-start: auto; }
+        .event-chip .ev-avatars { display: flex; gap: 2px; margin-inline-start: auto; }
+        .event-chip .ev-av {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            font-size: 0.5rem;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700;
+        }
+
+        /* ========== SLIDE PANEL ========== */
+        .panel-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.4);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+        }
+        .panel-overlay.open { opacity: 1; pointer-events: auto; }
+        .slide-panel {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 420px;
+            max-width: 92vw;
+            background: var(--card);
+            z-index: 201;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+            transform: translateX(-105%);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-panel.open { transform: translateX(0); }
+        .panel-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .panel-title { font-weight: 700; font-size: 1rem; }
+        .panel-close {
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        .panel-body { padding: 20px; overflow-y: auto; flex: 1; }
+
+        /* ========== DAY DETAIL ========== */
+        .day-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .day-user-section { margin-bottom: 20px; }
+        .day-user-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .day-user-name { font-weight: 700; font-size: 0.9rem; }
+        .day-user-pct { font-size: 0.75rem; color: var(--text-muted); margin-inline-start: auto; }
+        .check-task {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .check-task:hover { border-color: var(--primary); }
+        .check-task.done { background: #f0fdf4; border-color: #bbf7d0; }
+        .check-task.done .ct-name { text-decoration: line-through; color: var(--text-muted); }
+        .ct-box {
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            border: 2px solid #cbd5e1;
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+        .check-task.done .ct-box { background: var(--success); border-color: var(--success); }
+        .ct-name { font-size: 0.88rem; font-weight: 500; }
+        .ct-dot { width: 10px; height: 10px; border-radius: 50%; margin-inline-start: auto; }
+
+        /* Event item in day panel */
+        .event-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid #fcd34d;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            background: #fffbeb;
+        }
+        .event-item .ev-icon {
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            background: #fef3c7;
+            display: flex; align-items: center; justify-content: center;
+            color: #f59e0b;
+            flex-shrink: 0;
+        }
+        .event-item .ev-name { font-size: 0.88rem; font-weight: 500; }
+        .event-item .ev-time { font-size: 0.75rem; color: #92400e; margin-inline-start: auto; }
+        .event-item .ev-users { display: flex; gap: 3px; }
+        .event-item .ev-av {
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            font-size: 0.6rem;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700;
+        }
+
+        /* ========== EVENT FORM (modal) ========== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.5);
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .modal-card {
+            background: var(--card);
+            border-radius: 16px;
+            width: 400px;
+            max-width: 92vw;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-card-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-card-body { padding: 20px; }
+        .modal-card-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+        .user-multi-pick { display: flex; gap: 8px; flex-wrap: wrap; }
+        .user-multi-pick-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 14px;
+            border-radius: 99px;
+            border: 1.5px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.15s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .user-multi-pick-btn.selected { border-color: var(--primary); color: var(--primary); background: #eef2ff; }
+        .user-multi-pick-btn .up-av {
+            width: 22px; height: 22px; border-radius: 50%;
+            background: var(--primary); color: white;
+            font-size: 0.65rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .mock-label { font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 6px; display: block; }
+        .mock-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .mock-badge.no-pin { background: #d1fae5; color: #065f46; }
+
+        .view { display: none; }
+        .view.active { display: block; }
+
+        @media (max-width: 768px) {
+            .day-cell { min-height: 72px; padding: 4px; }
+            .avatar { width: 24px; height: 24px; font-size: 0.6rem; }
+            .week-scroll { overflow-x: auto; }
+            .week-grid { min-width: 840px; }
+            .period-label { min-width: 120px; font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="header-right">
+            <div class="header-title">
+                <i class="bi bi-calendar-check"></i>
+                جدول المهام العائلي
+            </div>
+            <span class="sync-dot" title="متصل"></span>
+        </div>
+        <div class="header-left">
+            <button class="header-btn event-btn" onclick="openEventForm()"><i class="bi bi-calendar-event"></i> مناسبة</button>
+            <button class="header-btn" onclick="toggleNewTask()"><i class="bi bi-plus-lg"></i> مهمة</button>
+            <button class="header-btn"><i class="bi bi-gear"></i></button>
+        </div>
+    </header>
+
+    <div class="content">
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <div class="nav-group">
+                <button class="nav-btn" title="السابق"><i class="bi bi-chevron-right"></i></button>
+                <div class="period-label" id="periodLabel">يوليو 2026</div>
+                <button class="nav-btn" title="التالي"><i class="bi bi-chevron-left"></i></button>
+                <button class="nav-btn" title="اليوم" style="width:auto;padding:0 12px;font-size:0.8rem;font-weight:700;font-family:'Tajawal',sans-serif;">اليوم</button>
+            </div>
+            <div class="view-toggle">
+                <button id="btnMonth" class="active" onclick="setView('month')">شهر</button>
+                <button id="btnWeek" onclick="setView('week')">أسبوع</button>
+            </div>
+        </div>
+
+        <!-- COLOR LEGEND -->
+        <div class="color-legend">
+            <span style="font-weight:700;">لون الأفاتار = نسبة إنجاز المهام:</span>
+            <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span> 100%</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#34d399"></span> 80%+</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#fbbf24"></span> 60%+</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> 40%+</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> أقل من 40%</div>
+            <div class="legend-item"><span class="legend-dot" style="background:white;border:1.5px dashed #cbd5e1"></span> لا مهام</div>
+            <span class="legend-separator"></span>
+            <div class="legend-item"><i class="bi bi-calendar-event" style="color:#f59e0b;font-size:0.8rem;"></i> مناسبة</div>
+        </div>
+
+        <!-- NEW TASK FORM (mock) -->
+        <div class="cal-card" id="newTaskForm" style="display:none;padding:20px;margin-bottom:16px;">
+            <div style="font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;"><i class="bi bi-plus-circle"></i> مهمة جديدة (تتطلب PIN)</div>
+            <div class="row g-3">
+                <div class="col-12"><label class="mock-label">اسم المهمة</label><input type="text" class="form-control" placeholder="مثال: قراءة القرآن"></div>
+                <div class="col-12">
+                    <label class="mock-label">المستخدم</label>
+                    <div class="user-multi-pick">
+                        <button class="user-multi-pick-btn selected"><span class="up-av">أ</span> أحمد</button>
+                        <button class="user-multi-pick-btn"><span class="up-av" style="background:#ec4899">س</span> سارة</button>
+                        <button class="user-multi-pick-btn"><span class="up-av" style="background:#f59e0b">م</span> محمد</button>
+                    </div>
+                </div>
+                <div class="col-md-6"><label class="mock-label">تاريخ البداية</label><input type="date" class="form-control" value="2026-07-01"></div>
+                <div class="col-md-6"><label class="mock-label">تاريخ النهاية <span style="color:var(--text-muted);font-weight:400;">(اختياري)</span></label><input type="date" class="form-control"></div>
+                <div class="col-12">
+                    <label class="mock-label">أيام التكرار</label>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <button style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);background:var(--primary);color:white;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">أحد</button>
+                        <button style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);background:var(--primary);color:white;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">اثنين</button>
+                        <button style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);background:var(--primary);color:white;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">ثلاثاء</button>
+                        <button style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);background:var(--primary);color:white;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">أربعاء</button>
+                        <button style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);background:var(--primary);color:white;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">خميس</button>
+                        <button style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);color:var(--text-muted);font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">جمعة</button>
+                        <button style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);color:var(--text-muted);font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;">سبت</button>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" style="background:var(--primary);border:none;"><i class="bi bi-check-lg"></i> حفظ المهمة</button>
+                    <button class="btn btn-light" onclick="toggleNewTask()">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MONTH VIEW -->
+        <div class="view active" id="viewMonth">
+            <div class="cal-card">
+                <div class="month-grid" id="monthGrid"></div>
+            </div>
+        </div>
+
+        <!-- WEEK VIEW -->
+        <div class="view" id="viewWeek">
+            <div class="cal-card">
+                <div class="week-scroll">
+                    <div class="week-grid" id="weekGrid"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- OVERLAY -->
+    <div class="panel-overlay" id="overlay" onclick="closePanels()"></div>
+
+    <!-- DAY DETAIL PANEL -->
+    <div class="slide-panel" id="dayPanel">
+        <div class="panel-header">
+            <div class="panel-title" id="dayPanelTitle">الأحد 12 يوليو</div>
+            <button class="panel-close" onclick="closePanels()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="panel-body" id="dayPanelBody"></div>
+    </div>
+
+    <!-- EVENT FORM MODAL -->
+    <div class="modal-overlay" id="eventModal">
+        <div class="modal-card">
+            <div class="modal-card-header">
+                <h5 style="margin:0;display:flex;align-items:center;gap:8px;"><i class="bi bi-calendar-event" style="color:#f59e0b;"></i> مناسبة جديدة</h5>
+                <button class="panel-close" onclick="closeEventForm()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-card-body">
+                <div style="margin-bottom:12px;">
+                    <span class="mock-badge no-pin"><i class="bi bi-unlock"></i> لا يتطلب PIN — أي شخص يمكنه الإضافة</span>
+                </div>
+                <div class="mb-3">
+                    <label class="mock-label">اسم المناسبة</label>
+                    <input type="text" class="form-control" placeholder="مثال: رحلة عائلية، موعد طبيب">
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="mock-label">التاريخ</label>
+                        <input type="date" class="form-control" value="2026-07-22">
+                    </div>
+                    <div class="col-6">
+                        <label class="mock-label">الوقت <span style="color:var(--text-muted);font-weight:400;">(اختياري)</span></label>
+                        <input type="time" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="mock-label">المستخدمين</label>
+                    <div class="user-multi-pick">
+                        <button class="user-multi-pick-btn selected"><span class="up-av">أ</span> أحمد</button>
+                        <button class="user-multi-pick-btn selected"><span class="up-av" style="background:#ec4899">س</span> سارة</button>
+                        <button class="user-multi-pick-btn"><span class="up-av" style="background:#f59e0b">م</span> محمد</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="mock-label">التكرار</label>
+                    <select class="form-select" id="eventRepeat" onchange="toggleRepeatEnd()">
+                        <option value="none">بدون تكرار</option>
+                        <option value="daily">يومي</option>
+                        <option value="weekly">أسبوعي</option>
+                        <option value="monthly">شهري</option>
+                        <option value="yearly">سنوي</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="repeatEndGroup" style="display:none;">
+                    <label class="mock-label">تاريخ نهاية التكرار <span style="color:var(--text-muted);font-weight:400;">(اختياري)</span></label>
+                    <input type="date" class="form-control" id="eventRepeatEnd">
+                </div>
+                <div class="mb-3">
+                    <label class="mock-label">اللون</label>
+                    <input type="color" class="form-control form-control-color" value="#f59e0b" style="width:60px;height:36px;">
+                </div>
+            </div>
+            <div class="modal-card-footer">
+                <button class="btn btn-light" onclick="closeEventForm()">إلغاء</button>
+                <button class="btn btn-warning" onclick="closeEventForm()"><i class="bi bi-check-lg"></i> حفظ المناسبة</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== MOCK DATA ==========
+        const USERS = [
+            { id: 'u1', name: 'أحمد', initial: 'أ', color: '#6366f1' },
+            { id: 'u2', name: 'سارة', initial: 'س', color: '#ec4899' },
+            { id: 'u3', name: 'محمد', initial: 'م', color: '#f59e0b' },
+        ];
+
+        const TASKS = [
+            { id: 't1', userId: 'u1', name: 'قراءة القرآن', color: '#22c55e', start: '2026-07-01', end: null, days: [0,1,2,3,4] },
+            { id: 't2', userId: 'u1', name: 'الواجبات المدرسية', color: '#3b82f6', start: '2026-07-01', end: '2026-08-31', days: [0,1,2,3,4] },
+            { id: 't3', userId: 'u1', name: 'رياضة', color: '#f97316', start: '2026-07-05', end: null, days: [0,2,4] },
+            { id: 't4', userId: 'u2', name: 'قراءة القرآن', color: '#22c55e', start: '2026-07-01', end: null, days: [0,1,2,3,4,5,6] },
+            { id: 't5', userId: 'u2', name: 'حفظ جدول الضرب', color: '#a855f7', start: '2026-07-01', end: '2026-07-31', days: [1,3] },
+            { id: 't6', userId: 'u3', name: 'ترتيب الغرفة', color: '#ec4899', start: '2026-07-01', end: null, days: [5,6] },
+            { id: 't7', userId: 'u3', name: 'القراءة قبل النوم', color: '#06b6d4', start: '2026-07-01', end: null, days: [0,1,2,3,4,5,6] },
+        ];
+
+        // Events — no PIN, multi-user, single date
+        const EVENTS = [
+            { id: 'e1', name: 'رحلة عائلية للبحر', date: '2026-07-22', time: '09:00', userIds: ['u1','u2','u3'], color: '#f59e0b' },
+            { id: 'e2', name: 'موعد طبيب الأسنان', date: '2026-07-24', time: '14:30', userIds: ['u1'], color: '#ef4444' },
+            { id: 'e3', name: 'حفلة مدرسية', date: '2026-07-28', time: null, userIds: ['u2','u3'], color: '#8b5cf6' },
+            { id: 'e4', name: 'زيارة الجدة', date: '2026-07-15', time: '16:00', userIds: ['u1','u2','u3'], color: '#ec4899' },
+            { id: 'e5', name: 'شراء مستلزمات', date: '2026-07-25', time: null, userIds: ['u1'], color: '#06b6d4' },
+        ];
+
+        const COMPLETIONS = {};
+        const seedDays = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+        for (const d of seedDays) {
+            const date = `2026-07-${String(d).padStart(2,'0')}`;
+            const dow = new Date(2026, 6, d).getDay();
+            for (const t of TASKS) {
+                if (!t.days.includes(dow)) continue;
+                if (date < t.start) continue;
+                if (t.end && date > t.end) continue;
+                const done = t.userId === 'u1' ? (d % 9 !== 0)
+                           : t.userId === 'u2' ? (d % 3 !== 0)
+                           : (d <= 15 && d % 2 === 0);
+                if (done) COMPLETIONS[`${t.userId}_${date}_${t.id}`] = true;
+            }
+        }
+
+        const TODAY = 22;
+        const MONTH = 6, YEAR = 2026;
+        const DOW_NAMES = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+        // ========== HELPERS ==========
+        function dateStr(y, m, d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+        function tasksFor(userId, y, m, d) {
+            const ds = dateStr(y, m, d);
+            const dow = new Date(y, m, d).getDay();
+            return TASKS.filter(t =>
+                t.userId === userId && t.days.includes(dow) && ds >= t.start && (!t.end || ds <= t.end)
+            );
+        }
+
+        function eventsFor(y, m, d) {
+            const ds = dateStr(y, m, d);
+            return EVENTS.filter(e => e.date === ds);
+        }
+
+        function pctFor(userId, y, m, d) {
+            const tasks = tasksFor(userId, y, m, d);
+            if (tasks.length === 0) return null;
+            const ds = dateStr(y, m, d);
+            const done = tasks.filter(t => COMPLETIONS[`${userId}_${ds}_${t.id}`]).length;
+            return Math.round((done / tasks.length) * 100);
+        }
+
+        function avatarClass(pct) {
+            if (pct === null) return 'none';
+            if (pct >= 100) return 'p100';
+            if (pct >= 80) return 'p80';
+            if (pct >= 60) return 'p60';
+            if (pct >= 40) return 'p40';
+            if (pct > 0) return 'p20';
+            return 'p0';
+        }
+
+        function avatarHtml(u, pct) {
+            return `<span class="avatar ${avatarClass(pct)}" title="${u.name} — ${pct === null ? 'لا مهام' : pct + '%'}"
+                onclick="event.stopPropagation();">${u.initial}</span>`;
+        }
+
+        // ========== MONTH VIEW ==========
+        function renderMonth() {
+            const grid = document.getElementById('monthGrid');
+            let html = '';
+            for (const n of DOW_NAMES) html += `<div class="dow">${n}</div>`;
+
+            const first = new Date(YEAR, MONTH, 1);
+            const startDow = first.getDay();
+            const daysInMonth = new Date(YEAR, MONTH + 1, 0).getDate();
+            const prevDays = new Date(YEAR, MONTH, 0).getDate();
+
+            for (let i = 0; i < startDow; i++) {
+                html += `<div class="day-cell other-month"><span class="day-num">${prevDays - startDow + 1 + i}</span></div>`;
+            }
+            for (let d = 1; d <= daysInMonth; d++) {
+                const isToday = d === TODAY;
+                const evts = eventsFor(YEAR, MONTH, d);
+                html += `<div class="day-cell ${isToday ? 'today' : ''}" onclick="openDayPanel(${d})">
+                    <span class="day-num">${d}</span>
+                    <div class="avatar-row">`;
+                for (const u of USERS) {
+                    html += avatarHtml(u, pctFor(u.id, YEAR, MONTH, d));
+                }
+                html += `</div>`;
+                // Event indicators
+                if (evts.length > 0) {
+                    html += `<div class="event-indicators">`;
+                    for (const ev of evts) {
+                        html += `<span class="event-label"><i class="bi bi-calendar-event"></i> ${ev.name}</span>`;
+                    }
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+            const total = startDow + daysInMonth;
+            const trailing = (7 - (total % 7)) % 7;
+            for (let i = 1; i <= trailing; i++) {
+                html += `<div class="day-cell other-month"><span class="day-num">${i}</span></div>`;
+            }
+            grid.innerHTML = html;
+        }
+
+        // ========== WEEK VIEW ==========
+        function renderWeek() {
+            const startDay = TODAY - new Date(YEAR, MONTH, TODAY).getDay();
+            const grid = document.getElementById('weekGrid');
+            let html = '';
+            for (let i = 0; i < 7; i++) {
+                const d = startDay + i;
+                const dt = new Date(YEAR, MONTH, d);
+                const inMonth = d >= 1 && d <= new Date(YEAR, MONTH + 1, 0).getDate();
+                const isToday = d === TODAY;
+                html += `<div class="week-day">
+                    <div class="week-day-header ${isToday ? 'today' : ''}">
+                        <div class="dow-name">${DOW_NAMES[i]}</div>
+                        <div class="d-num">${dt.getDate()}</div>
+                    </div>
+                    <div class="week-day-body" ${inMonth ? `onclick="openDayPanel(${dt.getDate()})"` : ''}>`;
+                if (inMonth) {
+                    // Events first
+                    const evts = eventsFor(dt.getFullYear(), dt.getMonth(), dt.getDate());
+                    for (const ev of evts) {
+                        const evUsers = USERS.filter(u => ev.userIds.includes(u.id));
+                        html += `<div class="event-chip">
+                            <i class="bi bi-calendar-event"></i> ${ev.name}
+                            ${ev.time ? `<span class="ev-time">${ev.time}</span>` : ''}
+                            <span class="ev-avatars">${evUsers.map(u => `<span class="ev-av" style="background:${u.color}">${u.initial}</span>`).join('')}</span>
+                        </div>`;
+                    }
+                    // Tasks
+                    for (const u of USERS) {
+                        const tasks = tasksFor(u.id, dt.getFullYear(), dt.getMonth(), dt.getDate());
+                        if (tasks.length === 0) continue;
+                        const pct = pctFor(u.id, dt.getFullYear(), dt.getMonth(), dt.getDate());
+                        const ds = dateStr(dt.getFullYear(), dt.getMonth(), dt.getDate());
+                        html += `<div class="week-user-block">
+                            <div class="week-user-head">${avatarHtml(u, pct)}<span class="week-user-name">${u.name}</span></div>`;
+                        for (const t of tasks) {
+                            const done = COMPLETIONS[`${u.id}_${ds}_${t.id}`];
+                            html += `<div class="task-chip ${done ? 'done' : ''}" style="background:${t.color}18;">
+                                <span class="t-dot" style="background:${t.color}"></span> ${t.name}
+                                ${done ? '<i class="bi bi-check-lg t-check" style="color:#10b981"></i>' : ''}
+                            </div>`;
+                        }
+                        html += `</div>`;
+                    }
+                }
+                html += `</div></div>`;
+            }
+            grid.innerHTML = html;
+        }
+
+        // ========== DAY DETAIL PANEL ==========
+        function openDayPanel(d) {
+            const dow = new Date(YEAR, MONTH, d).getDay();
+            document.getElementById('dayPanelTitle').textContent = `${DOW_NAMES[dow]} ${d} يوليو`;
+            const ds = dateStr(YEAR, MONTH, d);
+            let html = '';
+
+            // Events section
+            const evts = eventsFor(YEAR, MONTH, d);
+            if (evts.length > 0) {
+                html += `<p class="day-section-title"><i class="bi bi-calendar-event" style="color:#f59e0b;"></i> المناسبات</p>`;
+                for (const ev of evts) {
+                    const evUsers = USERS.filter(u => ev.userIds.includes(u.id));
+                    html += `<div class="event-item">
+                        <span class="ev-icon"><i class="bi bi-calendar-event"></i></span>
+                        <span class="ev-name">${ev.name}</span>
+                        ${ev.time ? `<span class="ev-time"><i class="bi bi-clock"></i> ${ev.time}</span>` : ''}
+                        <span class="ev-users">${evUsers.map(u => `<span class="ev-av" style="background:${u.color}">${u.initial}</span>`).join('')}</span>
+                    </div>`;
+                }
+            }
+
+            // Tasks section
+            html += `<p class="day-section-title"><i class="bi bi-check2-square" style="color:var(--primary);"></i> المهام</p>`;
+            let hasTasks = false;
+            for (const u of USERS) {
+                const tasks = tasksFor(u.id, YEAR, MONTH, d);
+                if (tasks.length === 0) continue;
+                hasTasks = true;
+                const pct = pctFor(u.id, YEAR, MONTH, d);
+                html += `<div class="day-user-section">
+                    <div class="day-user-head">
+                        ${avatarHtml(u, pct)}
+                        <span class="day-user-name">${u.name}</span>
+                        <span class="day-user-pct">${pct}%</span>
+                    </div>`;
+                for (const t of tasks) {
+                    const done = COMPLETIONS[`${u.id}_${ds}_${t.id}`];
+                    html += `<div class="check-task ${done ? 'done' : ''}">
+                        <span class="ct-box">${done ? '<i class="bi bi-check-lg"></i>' : ''}</span>
+                        <span class="ct-name">${t.name}</span>
+                        <span class="ct-dot" style="background:${t.color}"></span>
+                    </div>`;
+                }
+                html += `</div>`;
+            }
+            if (!hasTasks) html += '<p style="color:var(--text-muted);text-align:center;padding:20px 0;">لا مهام مجدولة لهذا اليوم</p>';
+
+            document.getElementById('dayPanelBody').innerHTML = html;
+            document.getElementById('overlay').classList.add('open');
+            document.getElementById('dayPanel').classList.add('open');
+        }
+
+        function closePanels() {
+            document.getElementById('overlay').classList.remove('open');
+            document.getElementById('dayPanel').classList.remove('open');
+        }
+
+        function setView(v) {
+            document.getElementById('viewMonth').classList.toggle('active', v === 'month');
+            document.getElementById('viewWeek').classList.toggle('active', v === 'week');
+            document.getElementById('btnMonth').classList.toggle('active', v === 'month');
+            document.getElementById('btnWeek').classList.toggle('active', v === 'week');
+            document.getElementById('periodLabel').textContent = v === 'month' ? 'يوليو 2026' : '19 – 25 يوليو 2026';
+        }
+
+        function toggleNewTask() {
+            const f = document.getElementById('newTaskForm');
+            f.style.display = f.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function openEventForm() {
+            document.getElementById('eventModal').classList.add('open');
+        }
+
+        function closeEventForm() {
+            document.getElementById('eventModal').classList.remove('open');
+        }
+
+        function toggleRepeatEnd() {
+            const repeat = document.getElementById('eventRepeat').value;
+            document.getElementById('repeatEndGroup').style.display = repeat === 'none' ? 'none' : 'block';
+        }
+
+        // User multi-pick toggle (mock)
+        document.querySelectorAll('.user-multi-pick-btn').forEach(b => b.onclick = function() {
+            this.classList.toggle('selected');
+        });
+
+        renderMonth();
+        renderWeek();
+    </script>
+
+</body>
+</html>

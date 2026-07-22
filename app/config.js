@@ -6,6 +6,7 @@
 function loadSettingsData() {
     loadUsers();
     loadTasks();
+    loadEvents();
     loadScheduleSettings();
     loadDeviceName();
     if (typeof loadConnectedDevices === 'function') loadConnectedDevices();
@@ -221,6 +222,118 @@ async function deleteTask(id) {
     });
 }
 
+// ==================== EVENT MANAGEMENT (no PIN required) ====================
+
+function loadEvents() {
+    const users = Object.entries(localUsers).map(([id, u]) => ({ id, ...u }));
+    const userNameMap = {};
+    users.forEach(u => { userNameMap[u.id] = u.name; });
+
+    const events = Object.entries(localEvents).map(([id, e]) => ({ id, ...e }));
+    const REPEAT_NAMES = { none: 'بدون', daily: 'يومي', weekly: 'أسبوعي', monthly: 'شهري', yearly: 'سنوي' };
+
+    const html = events.map(e => {
+        const userNames = (e.userIds || []).map(uid => escapeHtml(userNameMap[uid] || uid)).join('، ') || '—';
+        const repeatStr = REPEAT_NAMES[e.repeat || 'none'] || 'بدون';
+        return `<tr>
+            <td>${escapeHtml(e.name)}</td>
+            <td style="font-size:0.75rem;">${e.date || '—'} ${e.time ? e.time : ''}</td>
+            <td>${userNames}</td>
+            <td>${repeatStr}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteEvent('${e.id}')"><i class="bi bi-trash"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
+    $('#eventsTable').html(html);
+
+    // Set today as default date
+    if (!$('#eventDate').val()) {
+        $('#eventDate').val(new Date().toISOString().slice(0, 10));
+    }
+
+    // Populate event user picker
+    populateEventUserPicker();
+}
+
+function populateEventUserPicker() {
+    const users = Object.entries(localUsers).map(([id, u]) => ({ id, ...u }));
+    const picker = $('#eventUserPicker');
+    picker.empty();
+    users.forEach(u => {
+        const initial = u.name ? u.name.charAt(0) : '?';
+        picker.append(`<button class="user-multi-pick-btn" data-userid="${u.id}" onclick="$(this).toggleClass('selected')">
+            <span class="up-av" style="background:${u.color || '#6366f1'}">${escapeHtml(initial)}</span> ${escapeHtml(u.name)}
+        </button>`);
+    });
+}
+
+function openEventForm() {
+    populateEventUserPicker();
+    if (!$('#eventDate').val()) {
+        $('#eventDate').val(new Date().toISOString().slice(0, 10));
+    }
+    $('#eventModal').addClass('open');
+}
+
+function closeEventForm() {
+    $('#eventModal').removeClass('open');
+    $('#eventName').val('');
+    $('#eventTime').val('');
+    $('#eventRepeat').val('none');
+    $('#eventRepeatEnd').val('');
+    $('#eventRepeatEndGroup').hide();
+    $('#eventUserPicker .user-multi-pick-btn').removeClass('selected');
+}
+
+function toggleEventRepeatEnd() {
+    const repeat = $('#eventRepeat').val();
+    $('#eventRepeatEndGroup').toggle(repeat !== 'none');
+}
+
+function saveEvent() {
+    const name = $('#eventName').val().trim();
+    const date = $('#eventDate').val();
+    const time = $('#eventTime').val() || null;
+    const repeat = $('#eventRepeat').val();
+    const repeatEnd = $('#eventRepeatEnd').val() || null;
+    const color = $('#eventColor').val();
+    const userIds = [];
+    $('#eventUserPicker .user-multi-pick-btn.selected').each(function() {
+        userIds.push($(this).data('userid'));
+    });
+
+    if (!name) { Swal.fire('تنبيه', 'يرجى إدخال اسم المناسبة', 'warning'); return; }
+    if (!date) { Swal.fire('تنبيه', 'يرجى تحديد التاريخ', 'warning'); return; }
+
+    const id = 'event_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    const eventData = {
+        name, date, time, userIds, repeat, repeatEnd, color, createdAt: Date.now()
+    };
+    eventsNode.get(id).put(eventData);
+    localEvents[id] = eventData;
+    saveToLocal();
+    if (typeof broadcastCurrentData === 'function') broadcastCurrentData();
+
+    closeEventForm();
+    loadEvents();
+    if (typeof renderCalendar === 'function') renderCalendar();
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم إضافة المناسبة', showConfirmButton: false, timer: 1500 });
+}
+
+async function deleteEvent(id) {
+    const result = await Swal.fire({ title: 'تأكيد الحذف', text: 'هل أنت متأكد من حذف هذه المناسبة؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'نعم، احذف', cancelButtonText: 'إلغاء' });
+    if (!result.isConfirmed) return;
+
+    eventsNode.get(id).put(null);
+    delete localEvents[id];
+    saveToLocal();
+    if (typeof broadcastCurrentData === 'function') broadcastCurrentData();
+    loadEvents();
+    if (typeof renderCalendar === 'function') renderCalendar();
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم حذف المناسبة', showConfirmButton: false, timer: 1500 });
+}
+
 // Data reset — ALWAYS requires PIN (no grace period)
 async function resetData() {
     const result = await Swal.fire({
@@ -257,7 +370,8 @@ function exportData() {
                 data: {
                     users: localUsers || {},
                     tasks: localTasks || {},
-                    completions: localCompletions || {}
+                    completions: localCompletions || {},
+                    events: localEvents || {}
                 },
                 settings: {}
             };
@@ -397,10 +511,18 @@ function importData(event) {
                     P2P.setDeviceName(imported.deviceName);
                 }
 
+                // Import events
+                if (imported.data.events) {
+                    Object.entries(imported.data.events).forEach(([id, eventData]) => {
+                        eventsNode.get(id).put(eventData);
+                    });
+                }
+
                 // Update in-memory caches
                 if (imported.data.users) localUsers = imported.data.users;
                 if (imported.data.tasks) localTasks = imported.data.tasks;
                 if (imported.data.completions) localCompletions = imported.data.completions;
+                if (imported.data.events) localEvents = imported.data.events;
 
                 // Broadcast to peers
                 if (typeof broadcastCurrentData === 'function') broadcastCurrentData();

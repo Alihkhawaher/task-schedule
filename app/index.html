@@ -29,6 +29,9 @@
                     <div id="syncIndicator" class="sync-indicator"><span class="sync-dot" title="متصل"></span></div>
                 </div>
                 <div class="header-right">
+                    <button class="btn btn-outline-light btn-sm ms-2 event-btn" onclick="openEventForm()" title="إضافة مناسبة">
+                        <i class="bi bi-calendar-event"></i>
+                    </button>
                     <button class="btn btn-outline-light btn-sm ms-2" id="btnOpenSettings" title="الإعدادات" style="position:relative;">
                         <i class="bi bi-gear"></i>
                         <span class="join-requests-badge" id="joinRequestsBadge">0</span>
@@ -66,6 +69,8 @@
                 <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> 40%+</div>
                 <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> أقل من 40%</div>
                 <div class="legend-item"><span class="legend-dot" style="background:white;border:1.5px dashed #cbd5e1"></span> لا مهام</div>
+                <span style="width:1px;height:16px;background:var(--border);margin:0 4px;"></span>
+                <div class="legend-item"><i class="bi bi-calendar-event" style="color:#f59e0b;font-size:0.8rem;"></i> مناسبة</div>
             </div>
 
             <!-- MONTH VIEW -->
@@ -178,6 +183,15 @@
                     </div>
                 </div>
 
+                <!-- Event Management (no PIN) -->
+                <div class="settings-section" id="eventManagement">
+                    <h3><i class="bi bi-calendar-event"></i> إدارة المناسبات</h3>
+                    <p class="text-muted mb-3"><i class="bi bi-info-circle"></i> المناسبات لا تتطلب PIN — أي شخص يمكنه إضافتها أو حذفها</p>
+                    <div class="table-responsive">
+                        <table class="table table-striped"><thead><tr><th>المناسبة</th><th>التاريخ</th><th>المستخدمين</th><th>التكرار</th><th>الإجراءات</th></tr></thead><tbody id="eventsTable"></tbody></table>
+                    </div>
+                </div>
+
                 <!-- Share Device + Connection Requests -->
                 <div class="settings-section" id="shareDeviceSection">
                     <h3><i class="bi bi-qr-code"></i> مشاركة الجهاز</h3>
@@ -254,6 +268,61 @@
         <div class="settings-backdrop" id="settingsBackdrop"></div>
     </div>
 
+    <!-- ==================== EVENT FORM MODAL ==================== -->
+    <div class="modal-overlay" id="eventModal">
+        <div class="modal-card">
+            <div class="modal-card-header">
+                <h5 style="margin:0;display:flex;align-items:center;gap:8px;"><i class="bi bi-calendar-event" style="color:#f59e0b;"></i> مناسبة جديدة</h5>
+                <button class="panel-close" onclick="closeEventForm()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-card-body">
+                <div style="margin-bottom:12px;">
+                    <span class="no-pin-badge"><i class="bi bi-unlock"></i> لا يتطلب PIN — أي شخص يمكنه الإضافة</span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">اسم المناسبة</label>
+                    <input type="text" class="form-control" id="eventName" placeholder="مثال: رحلة عائلية، موعد طبيب">
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">التاريخ</label>
+                        <input type="date" class="form-control" id="eventDate">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">الوقت <small class="text-muted">(اختياري)</small></label>
+                        <input type="time" class="form-control" id="eventTime">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">المستخدمين</label>
+                    <div class="user-multi-pick" id="eventUserPicker"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">التكرار</label>
+                    <select class="form-select" id="eventRepeat" onchange="toggleEventRepeatEnd()">
+                        <option value="none">بدون تكرار</option>
+                        <option value="daily">يومي</option>
+                        <option value="weekly">أسبوعي</option>
+                        <option value="monthly">شهري</option>
+                        <option value="yearly">سنوي</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="eventRepeatEndGroup" style="display:none;">
+                    <label class="form-label">تاريخ نهاية التكرار <small class="text-muted">(اختياري)</small></label>
+                    <input type="date" class="form-control" id="eventRepeatEnd">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">اللون</label>
+                    <input type="color" class="form-control form-control-color" id="eventColor" value="#f59e0b" style="width:60px;height:36px;">
+                </div>
+            </div>
+            <div class="modal-card-footer">
+                <button class="btn btn-light" onclick="closeEventForm()">إلغاء</button>
+                <button class="btn btn-warning" onclick="saveEvent()"><i class="bi bi-check-lg"></i> حفظ المناسبة</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Libraries -->
     <script src="libs/bootstrap.bundle.min.js"></script>
     <script src="libs/jquery-3.7.0.min.js"></script>
@@ -264,8 +333,8 @@
     <script src="libs/qrcode.min.js"></script>
     <script src="libs/trystero-bundle.js"></script>
     <script src="p2p.js?v=6"></script>
-    <script src="app.js?v=12"></script>
-    <script src="config.js?v=12"></script>
+    <script src="app.js?v=13"></script>
+    <script src="config.js?v=13"></script>
     <!-- PWA Install -->
     <script>
     let deferredPrompt = null;

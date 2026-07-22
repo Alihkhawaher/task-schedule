@@ -56,11 +56,13 @@ const family = gun.get('families').get(familyCode);
 const usersNode = family.get('members');
 const tasksNode = family.get('tasks');
 const completionsNode = family.get('completions');
+const eventsNode = family.get('events');
 
 // Local caches
 let localUsers = {};
 let localTasks = {};
 let localCompletions = {};
+let localEvents = {};
 
 // localStorage persistence
 const STORAGE_KEY = 'taskSchedule_' + familyCode;
@@ -68,7 +70,7 @@ const STORAGE_KEY = 'taskSchedule_' + familyCode;
 function saveToLocal() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            users: localUsers, tasks: localTasks, completions: localCompletions, timestamp: Date.now()
+            users: localUsers, tasks: localTasks, completions: localCompletions, events: localEvents, timestamp: Date.now()
         }));
     } catch (e) { console.warn('localStorage save failed:', e); }
 }
@@ -81,6 +83,7 @@ function loadFromLocal() {
             if (data.users) localUsers = data.users;
             if (data.tasks) localTasks = data.tasks;
             if (data.completions) localCompletions = data.completions;
+            if (data.events) localEvents = data.events;
             return true;
         }
     } catch (e) { console.warn('localStorage load failed:', e); }
@@ -119,6 +122,7 @@ $(document).ready(function() {
     family.get('members').map().on((data, id) => { if (data && data.name) { localUsers[id] = data; saveToLocal(); } });
     tasksNode.map().on((data, id) => { if (data && data.name) { localTasks[id] = data; saveToLocal(); } });
     completionsNode.map().on((data, id) => { if (data) { localCompletions[id] = data; saveToLocal(); } });
+    eventsNode.map().on((data, id) => { if (data && data.name) { localEvents[id] = data; saveToLocal(); } });
 
     family.get('settings').once((settings) => {
         if (settings) {
@@ -242,6 +246,29 @@ function taskProgress(t) {
     return total === 0 ? 0 : Math.round((done / total) * 100);
 }
 
+// ==================== EVENT HELPERS ====================
+function eventsForDate(y, m, d) {
+    const ds = dateKey(y, m, d);
+    return Object.entries(localEvents)
+        .map(([id, e]) => ({ id, ...e }))
+        .filter(e => {
+            if (!e.date) return false;
+            // Check if the event falls on this date (with repeat logic)
+            if (e.date === ds) return true;
+            if (e.repeat && e.repeat !== 'none') {
+                const eventDate = new Date(e.date + 'T00:00:00');
+                const checkDate = new Date(y, m, d);
+                if (checkDate < eventDate) return false;
+                if (e.repeatEnd && ds > e.repeatEnd) return false;
+                if (e.repeat === 'daily') return true;
+                if (e.repeat === 'weekly') return eventDate.getDay() === checkDate.getDay();
+                if (e.repeat === 'monthly') return eventDate.getDate() === checkDate.getDate();
+                if (e.repeat === 'yearly') return eventDate.getMonth() === checkDate.getMonth() && eventDate.getDate() === checkDate.getDate();
+            }
+            return false;
+        });
+}
+
 // ==================== RENDER CALENDAR ====================
 function renderCalendar() {
     updatePeriodLabel();
@@ -281,6 +308,7 @@ function renderMonth() {
     }
     for (let d = 1; d <= daysInMonth; d++) {
         const isToday = d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+        const evts = eventsForDate(calYear, calMonth, d);
         html += `<div class="day-cell ${isToday ? 'today' : ''}" onclick="openDayPanel(${d})">
             <span class="day-num">${d}</span>
             <div class="avatar-row">`;
@@ -288,7 +316,15 @@ function renderMonth() {
         for (const u of users) {
             html += avatarHtml(u, pctForUserOnDate(u.id, calYear, calMonth, d));
         }
-        html += `</div></div>`;
+        html += `</div>`;
+        if (evts.length > 0) {
+            html += `<div class="event-indicators">`;
+            for (const ev of evts) {
+                html += `<span class="event-label"><i class="bi bi-calendar-event"></i> ${escapeHtml(ev.name)}</span>`;
+            }
+            html += `</div>`;
+        }
+        html += `</div>`;
     }
     const total = startDow + daysInMonth;
     const trailing = (7 - (total % 7)) % 7;
@@ -318,6 +354,16 @@ function renderWeek() {
             </div>
             <div class="week-day-body" ${inMonth ? `onclick="openDayPanel(${d},${m},${y})"` : ''}>`;
         if (inMonth) {
+            // Events first
+            const evts = eventsForDate(y, m, d);
+            for (const ev of evts) {
+                const evUsers = Object.entries(localUsers).filter(([uid]) => (ev.userIds || []).includes(uid)).map(([uid, u]) => ({ id: uid, ...u }));
+                html += `<div class="event-chip">
+                    <i class="bi bi-calendar-event"></i> ${escapeHtml(ev.name)}
+                    ${ev.time ? `<span class="ev-time">${ev.time}</span>` : ''}
+                    <span class="ev-avatars">${evUsers.map(u => `<span class="ev-av" style="background:${u.color || '#6366f1'}">${escapeHtml(u.name ? u.name.charAt(0) : '?')}</span>`).join('')}</span>
+                </div>`;
+            }
             const users = Object.entries(localUsers).map(([id, u]) => ({ id, ...u }));
             for (const u of users) {
                 const tasks = tasksForUserOnDate(u.id, y, m, d);
@@ -352,6 +398,24 @@ function openDayPanel(d, m, y) {
     let html = '';
     const users = Object.entries(localUsers).map(([id, u]) => ({ id, ...u }));
 
+    // Events section
+    const evts = eventsForDate(y, m, d);
+    if (evts.length > 0) {
+        html += `<p class="day-section-title"><i class="bi bi-calendar-event" style="color:#f59e0b;"></i> المناسبات</p>`;
+        for (const ev of evts) {
+            const evUsers = users.filter(u => (ev.userIds || []).includes(u.id));
+            html += `<div class="event-item">
+                <span class="ev-icon"><i class="bi bi-calendar-event"></i></span>
+                <span class="ev-name">${escapeHtml(ev.name)}</span>
+                ${ev.time ? `<span class="ev-time"><i class="bi bi-clock"></i> ${ev.time}</span>` : ''}
+                <span class="ev-users">${evUsers.map(u => `<span class="ev-av" style="background:${u.color || '#6366f1'}">${escapeHtml(u.name ? u.name.charAt(0) : '?')}</span>`).join('')}</span>
+            </div>`;
+        }
+    }
+
+    // Tasks section
+    html += `<p class="day-section-title"><i class="bi bi-check2-square" style="color:var(--primary);"></i> المهام</p>`;
+    let hasTasks = false;
     for (const u of users) {
         const tasks = tasksForUserOnDate(u.id, y, m, d);
         if (tasks.length === 0) continue;
@@ -457,7 +521,8 @@ function broadcastCurrentData() {
         familyName: sessionStorage.getItem('familyName') || '',
         members: localUsers,
         tasks: localTasks,
-        completions: localCompletions
+        completions: localCompletions,
+        events: localEvents
     });
 }
 
@@ -497,6 +562,13 @@ $(document).ready(function() {
                         Object.entries(message.completions).forEach(([id, comp]) => {
                             if (!localCompletions[id] || comp.timestamp > (localCompletions[id].timestamp || 0)) {
                                 localCompletions[id] = comp; changed = true;
+                            }
+                        });
+                    }
+                    if (message.events) {
+                        Object.entries(message.events).forEach(([id, event]) => {
+                            if (!localEvents[id] || event.createdAt > (localEvents[id].createdAt || 0)) {
+                                localEvents[id] = event; changed = true;
                             }
                         });
                     }

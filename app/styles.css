@@ -176,6 +176,157 @@ body.settings-open { overflow: hidden; }
 .avatar.p0   { background: #94a3b8; }
 .avatar.none { background: white; color: #94a3b8; border: 1.5px dashed #cbd5e1; box-shadow: none; }
 
+/* ========== EVENT INDICATORS (month view) ========== */
+.event-indicators { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.event-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    padding: 1px 4px;
+    background: #fef3c7;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.event-label i { font-size: 0.55rem; color: #f59e0b; }
+
+/* ========== EVENT CHIP (week view) ========== */
+.event-chip {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: default;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+}
+.event-chip i { color: #f59e0b; font-size: 0.65rem; }
+.event-chip .ev-time { font-size: 0.6rem; color: #92400e; margin-inline-start: auto; }
+.event-chip .ev-avatars { display: flex; gap: 2px; margin-inline-start: auto; }
+.event-chip .ev-av {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    font-size: 0.5rem;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700;
+}
+
+/* ========== DAY SECTION TITLE ========== */
+.day-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ========== EVENT ITEM (day panel) ========== */
+.event-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    background: #fffbeb;
+}
+.event-item .ev-icon {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: #fef3c7;
+    display: flex; align-items: center; justify-content: center;
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+.event-item .ev-name { font-size: 0.88rem; font-weight: 500; }
+.event-item .ev-time { font-size: 0.75rem; color: #92400e; margin-inline-start: auto; }
+.event-item .ev-users { display: flex; gap: 3px; }
+.event-item .ev-av {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    font-size: 0.6rem;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700;
+}
+
+/* ========== EVENT FORM MODAL ========== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.5);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-card {
+    background: var(--card);
+    border-radius: 16px;
+    width: 420px;
+    max-width: 92vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal-card-header {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+.modal-card-body { padding: 20px; }
+.modal-card-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+.user-multi-pick { display: flex; gap: 8px; flex-wrap: wrap; }
+.user-multi-pick-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    border: 1.5px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    font-family: 'Tajawal', sans-serif;
+}
+.user-multi-pick-btn.selected { border-color: var(--primary); color: var(--primary); background: #eef2ff; }
+.user-multi-pick-btn .up-av {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--primary); color: white;
+    font-size: 0.65rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.no-pin-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: #d1fae5; color: #065f46;
+}
+
+.header-btn.event-btn { background: rgba(251, 191, 36, 0.25); border-color: rgba(251, 191, 36, 0.4); }
+.header-btn.event-btn:hover { background: rgba(251, 191, 36, 0.4); }
+
 /* ========== WEEK VIEW ========== */
 .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
 .week-day {
