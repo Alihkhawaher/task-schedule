@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup — التقويم الجديد (مهام لكل مستخدم)</title>
+    <link href="../app/libs/tajawal.css" rel="stylesheet">
+    <link href="../app/libs/bootstrap.min.css" rel="stylesheet">
+    <link href="../app/libs/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* ========== HEADER ========== */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            color: white;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-title { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .header-left { display: flex; align-items: center; gap: 8px; }
+        .sync-dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .header-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .header-btn:hover { background: rgba(255,255,255,0.25); }
+        .header-btn.active { background: white; color: var(--primary); font-weight: 600; }
+
+        .content { padding: 16px; max-width: 1200px; margin: 0 auto; }
+
+        /* ========== TOOLBAR ========== */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .nav-group { display: flex; align-items: center; gap: 8px; }
+        .nav-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .period-label { font-size: 1.05rem; font-weight: 700; min-width: 170px; text-align: center; }
+        .view-toggle {
+            display: flex;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .view-toggle button {
+            border: none;
+            background: transparent;
+            padding: 8px 20px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .view-toggle button.active { background: var(--primary); color: white; }
+
+        /* ========== COLOR LEGEND ========== */
+        .color-legend {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            padding: 8px 14px;
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            align-items: center;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        /* ========== MONTH VIEW ========== */
+        .cal-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+        .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .month-grid .dow {
+            background: #f8fafc;
+            padding: 10px 6px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border);
+        }
+        .day-cell {
+            min-height: 92px;
+            border-bottom: 1px solid #f1f5f9;
+            border-inline-start: 1px solid #f1f5f9;
+            padding: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .day-cell:hover { background: #f8fafc; }
+        .day-cell.other-month { opacity: 0.35; background: #fafbfc; }
+        .day-cell.today { background: #eef2ff; }
+        .day-cell.today .day-num { color: var(--primary); }
+        .day-num { font-size: 0.85rem; font-weight: 700; }
+        .avatar-row { display: flex; flex-wrap: wrap; gap: 4px; }
+
+        /* ========== AVATARS ========== */
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            transition: transform 0.15s;
+        }
+        .avatar:hover { transform: scale(1.2); z-index: 2; position: relative; }
+        .avatar.p100 { background: var(--success); }
+        .avatar.p80  { background: #34d399; }
+        .avatar.p60  { background: #fbbf24; }
+        .avatar.p40  { background: #f97316; }
+        .avatar.p20  { background: var(--danger); }
+        .avatar.p0   { background: #94a3b8; }
+        .avatar.none { background: white; color: #94a3b8; border: 1.5px dashed #cbd5e1; box-shadow: none; }
+
+        /* ========== WEEK VIEW ========== */
+        .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .week-day {
+            border-inline-start: 1px solid #f1f5f9;
+            min-height: 380px;
+            display: flex;
+            flex-direction: column;
+        }
+        .week-day:first-child { border-inline-start: none; }
+        .week-day-header {
+            padding: 10px 6px;
+            text-align: center;
+            border-bottom: 2px solid var(--border);
+            background: #f8fafc;
+        }
+        .week-day-header.today { background: #eef2ff; }
+        .week-day-header .dow-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
+        .week-day-header .d-num { font-size: 1.1rem; font-weight: 700; }
+        .week-day-header.today .dow-name,
+        .week-day-header.today .d-num { color: var(--primary); }
+        .week-day-body { padding: 8px 6px; display: flex; flex-direction: column; gap: 8px; flex: 1; cursor: pointer; }
+        .week-day-body:hover { background: #f8fafc; }
+        .week-user-block { display: flex; flex-direction: column; gap: 4px; }
+        .week-user-head { display: flex; align-items: center; gap: 5px; }
+        .week-user-name { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); }
+        .task-chip {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: filter 0.15s;
+        }
+        .task-chip:hover { filter: brightness(0.95); }
+        .task-chip.done { text-decoration: line-through; opacity: 0.65; }
+        .task-chip .t-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .task-chip .t-check { margin-inline-start: auto; }
+
+        /* ========== SLIDE PANEL (shared) ========== */
+        .panel-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.4);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+        }
+        .panel-overlay.open { opacity: 1; pointer-events: auto; }
+        .slide-panel {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 420px;
+            max-width: 92vw;
+            background: var(--card);
+            z-index: 201;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+            transform: translateX(-105%);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-panel.open { transform: translateX(0); }
+        .panel-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .panel-title { font-weight: 700; font-size: 1rem; }
+        .panel-close {
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        .panel-body { padding: 20px; overflow-y: auto; flex: 1; }
+
+        /* ========== DAY DETAIL ========== */
+        .day-user-section { margin-bottom: 20px; }
+        .day-user-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .day-user-name { font-weight: 700; font-size: 0.9rem; }
+        .day-user-pct { font-size: 0.75rem; color: var(--text-muted); margin-inline-start: auto; }
+        .check-task {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .check-task:hover { border-color: var(--primary); }
+        .check-task.done { background: #f0fdf4; border-color: #bbf7d0; }
+        .check-task.done .ct-name { text-decoration: line-through; color: var(--text-muted); }
+        .ct-box {
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            border: 2px solid #cbd5e1;
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+        .check-task.done .ct-box { background: var(--success); border-color: var(--success); }
+        .ct-name { font-size: 0.88rem; font-weight: 500; }
+        .ct-dot { width: 10px; height: 10px; border-radius: 50%; margin-inline-start: auto; }
+
+        /* ========== USER DASHBOARD ========== */
+        .dash-hero {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .dash-avatar {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.4rem; font-weight: 700;
+            flex-shrink: 0;
+        }
+        .dash-name { font-size: 1.15rem; font-weight: 700; }
+        .dash-sub { font-size: 0.8rem; color: var(--text-muted); }
+        .dash-overall {
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            border-radius: 14px;
+            color: white;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .dash-overall .pct { font-size: 2rem; font-weight: 800; }
+        .dash-overall .lbl { font-size: 0.8rem; opacity: 0.9; }
+        .dash-section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin: 0 0 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .task-progress { margin-bottom: 14px; }
+        .tp-head { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+        .tp-name { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .tp-pct { font-weight: 700; color: var(--text-muted); }
+        .tp-bar { height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+        .tp-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+        .tp-range { font-size: 0.7rem; color: var(--text-muted); margin-top: 3px; }
+
+        /* ========== NEW TASK FORM ========== */
+        .form-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            margin-bottom: 16px;
+        }
+        .form-title { font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .dow-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+        .dow-pick {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.15s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .dow-pick.selected { background: var(--primary); border-color: var(--primary); color: white; }
+        .user-pick-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .user-pick {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 14px;
+            border-radius: 99px;
+            border: 1.5px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.15s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .user-pick.selected { border-color: var(--primary); color: var(--primary); background: #eef2ff; }
+        .user-pick .up-av {
+            width: 22px; height: 22px; border-radius: 50%;
+            background: var(--primary); color: white;
+            font-size: 0.65rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .mock-label { font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 6px; display: block; }
+
+        .view { display: none; }
+        .view.active { display: block; }
+
+        @media (max-width: 768px) {
+            .day-cell { min-height: 64px; padding: 4px; }
+            .avatar { width: 24px; height: 24px; font-size: 0.6rem; }
+            .week-grid { grid-template-columns: repeat(7, 1fr); overflow-x: auto; display: grid; }
+            .week-scroll { overflow-x: auto; }
+            .week-grid { min-width: 840px; }
+            .period-label { min-width: 120px; font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="header-right">
+            <div class="header-title">
+                <i class="bi bi-calendar-check"></i>
+                جدول المهام العائلي
+            </div>
+            <span class="sync-dot" title="متصل"></span>
+        </div>
+        <div class="header-left">
+            <button class="header-btn" onclick="toggleNewTask()"><i class="bi bi-plus-lg"></i> مهمة جديدة</button>
+            <button class="header-btn"><i class="bi bi-gear"></i></button>
+        </div>
+    </header>
+
+    <div class="content">
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <div class="nav-group">
+                <button class="nav-btn" title="السابق"><i class="bi bi-chevron-right"></i></button>
+                <div class="period-label" id="periodLabel">يوليو 2026</div>
+                <button class="nav-btn" title="التالي"><i class="bi bi-chevron-left"></i></button>
+                <button class="nav-btn" title="اليوم" style="width:auto;padding:0 12px;font-size:0.8rem;font-weight:700;font-family:'Tajawal',sans-serif;">اليوم</button>
+            </div>
+            <div class="view-toggle">
+                <button id="btnMonth" class="active" onclick="setView('month')">شهر</button>
+                <button id="btnWeek" onclick="setView('week')">أسبوع</button>
+            </div>
+        </div>
+
+        <!-- COLOR LEGEND -->
+        <div class="color-legend">
+            <span style="font-weight:700;">لون الأفاتار = نسبة إنجاز المستخدم لليوم:</span>
+            <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span> 100%</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#34d399"></span> 80%+</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#fbbf24"></span> 60%+</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> 40%+</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> أقل من 40%</div>
+            <div class="legend-item"><span class="legend-dot" style="background:white;border:1.5px dashed #cbd5e1"></span> لا مهام</div>
+        </div>
+
+        <!-- NEW TASK FORM (mock) -->
+        <div class="form-card" id="newTaskForm" style="display:none;">
+            <div class="form-title"><i class="bi bi-plus-circle"></i> مهمة جديدة (تُسند لمستخدم واحد)</div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="mock-label">اسم المهمة</label>
+                    <input type="text" class="form-control" placeholder="مثال: قراءة القرآن">
+                </div>
+                <div class="col-12">
+                    <label class="mock-label">المستخدم</label>
+                    <div class="user-pick-row">
+                        <button class="user-pick selected"><span class="up-av">أ</span> أحمد</button>
+                        <button class="user-pick"><span class="up-av" style="background:#ec4899">س</span> سارة</button>
+                        <button class="user-pick"><span class="up-av" style="background:#f59e0b">م</span> محمد</button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="mock-label">تاريخ البداية</label>
+                    <input type="date" class="form-control" value="2026-07-01">
+                </div>
+                <div class="col-md-6">
+                    <label class="mock-label">تاريخ النهاية <span style="color:var(--text-muted);font-weight:400;">(اختياري — فارغ = بدون نهاية)</span></label>
+                    <input type="date" class="form-control">
+                </div>
+                <div class="col-12">
+                    <label class="mock-label">أيام التكرار</label>
+                    <div class="dow-picker">
+                        <button class="dow-pick selected">أحد</button>
+                        <button class="dow-pick selected">اثنين</button>
+                        <button class="dow-pick selected">ثلاثاء</button>
+                        <button class="dow-pick selected">أربعاء</button>
+                        <button class="dow-pick selected">خميس</button>
+                        <button class="dow-pick">جمعة</button>
+                        <button class="dow-pick">سبت</button>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" style="background:var(--primary);border:none;"><i class="bi bi-check-lg"></i> حفظ المهمة</button>
+                    <button class="btn btn-light" onclick="toggleNewTask()">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MONTH VIEW -->
+        <div class="view active" id="viewMonth">
+            <div class="cal-card">
+                <div class="month-grid" id="monthGrid"></div>
+            </div>
+        </div>
+
+        <!-- WEEK VIEW -->
+        <div class="view" id="viewWeek">
+            <div class="cal-card">
+                <div class="week-scroll">
+                    <div class="week-grid" id="weekGrid"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- OVERLAY -->
+    <div class="panel-overlay" id="overlay" onclick="closePanels()"></div>
+
+    <!-- DAY DETAIL PANEL -->
+    <div class="slide-panel" id="dayPanel">
+        <div class="panel-header">
+            <div class="panel-title" id="dayPanelTitle">الأحد 12 يوليو</div>
+            <button class="panel-close" onclick="closePanels()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="panel-body" id="dayPanelBody"></div>
+    </div>
+
+    <!-- USER DASHBOARD PANEL -->
+    <div class="slide-panel" id="userPanel">
+        <div class="panel-header">
+            <div class="panel-title">لوحة المستخدم</div>
+            <button class="panel-close" onclick="closePanels()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="panel-body" id="userPanelBody"></div>
+    </div>
+
+    <script>
+        // ========== MOCK DATA ==========
+        const USERS = [
+            { id: 'u1', name: 'أحمد', initial: 'أ', color: '#6366f1' },
+            { id: 'u2', name: 'سارة', initial: 'س', color: '#ec4899' },
+            { id: 'u3', name: 'محمد', initial: 'م', color: '#f59e0b' },
+        ];
+
+        const TASKS = [
+            { id: 't1', userId: 'u1', name: 'قراءة القرآن', color: '#22c55e', start: '2026-07-01', end: null, days: [0,1,2,3,4] },
+            { id: 't2', userId: 'u1', name: 'الواجبات المدرسية', color: '#3b82f6', start: '2026-07-01', end: '2026-08-31', days: [0,1,2,3,4] },
+            { id: 't3', userId: 'u1', name: 'رياضة', color: '#f97316', start: '2026-07-05', end: null, days: [0,2,4] },
+            { id: 't4', userId: 'u2', name: 'قراءة القرآن', color: '#22c55e', start: '2026-07-01', end: null, days: [0,1,2,3,4,5,6] },
+            { id: 't5', userId: 'u2', name: 'حفظ جدول الضرب', color: '#a855f7', start: '2026-07-01', end: '2026-07-31', days: [1,3] },
+            { id: 't6', userId: 'u3', name: 'ترتيب الغرفة', color: '#ec4899', start: '2026-07-01', end: null, days: [5,6] },
+            { id: 't7', userId: 'u3', name: 'القراءة قبل النوم', color: '#06b6d4', start: '2026-07-01', end: null, days: [0,1,2,3,4,5,6] },
+        ];
+
+        // completions: { "u1_2026-07-01_t1": true }
+        const COMPLETIONS = {};
+        // Seed: July 1-12 fully/partially completed
+        const seedDays = [1,2,3,4,5,6,7,8,9,10,11,12];
+        for (const d of seedDays) {
+            const date = `2026-07-${String(d).padStart(2,'0')}`;
+            const dow = new Date(2026, 6, d).getDay();
+            for (const t of TASKS) {
+                if (!t.days.includes(dow)) continue;
+                if (date < t.start) continue;
+                if (t.end && date > t.end) continue;
+                // pseudo-random: u1 mostly done, u2 partial, u3 sparse in week 2
+                const done = t.userId === 'u1' ? (d % 9 !== 0)
+                           : t.userId === 'u2' ? (d % 3 !== 0)
+                           : (d <= 8 && d % 2 === 0);
+                if (done) COMPLETIONS[`${t.userId}_${date}_${t.id}`] = true;
+            }
+        }
+
+        const TODAY = 22; // July 22, 2026 (Wednesday)
+        const MONTH = 6, YEAR = 2026; // July (0-indexed)
+        const DOW_NAMES = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+        // ========== HELPERS ==========
+        function dateStr(y, m, d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+        function tasksFor(userId, y, m, d) {
+            const ds = dateStr(y, m, d);
+            const dow = new Date(y, m, d).getDay();
+            return TASKS.filter(t =>
+                t.userId === userId &&
+                t.days.includes(dow) &&
+                ds >= t.start &&
+                (!t.end || ds <= t.end)
+            );
+        }
+
+        function pctFor(userId, y, m, d) {
+            const tasks = tasksFor(userId, y, m, d);
+            if (tasks.length === 0) return null;
+            const ds = dateStr(y, m, d);
+            const done = tasks.filter(t => COMPLETIONS[`${userId}_${ds}_${t.id}`]).length;
+            return Math.round((done / tasks.length) * 100);
+        }
+
+        function avatarClass(pct) {
+            if (pct === null) return 'none';
+            if (pct >= 100) return 'p100';
+            if (pct >= 80) return 'p80';
+            if (pct >= 60) return 'p60';
+            if (pct >= 40) return 'p40';
+            if (pct > 0) return 'p20';
+            return 'p0';
+        }
+
+        function avatarHtml(u, pct) {
+            return `<span class="avatar ${avatarClass(pct)}" title="${u.name} — ${pct === null ? 'لا مهام' : pct + '%'}"
+                onclick="event.stopPropagation(); openUserPanel('${u.id}')">${u.initial}</span>`;
+        }
+
+        // Task overall progress (for dashboard): done days / total scheduled days so far within range
+        function taskProgress(t) {
+            const today = dateStr(YEAR, MONTH, TODAY);
+            const from = t.start > today ? today : t.start;
+            const to = (t.end && t.end < today) ? t.end : today;
+            let total = 0, done = 0;
+            const dt = new Date(from);
+            const endDt = new Date(to);
+            while (dt <= endDt) {
+                const ds = dateStr(dt.getFullYear(), dt.getMonth(), dt.getDate());
+                if (t.days.includes(dt.getDay()) && ds >= t.start) {
+                    total++;
+                    if (COMPLETIONS[`${t.userId}_${ds}_${t.id}`]) done++;
+                }
+                dt.setDate(dt.getDate() + 1);
+            }
+            return total === 0 ? 0 : Math.round((done / total) * 100);
+        }
+
+        // ========== MONTH VIEW ==========
+        function renderMonth() {
+            const grid = document.getElementById('monthGrid');
+            let html = '';
+            for (const n of DOW_NAMES) html += `<div class="dow">${n}</div>`;
+
+            const first = new Date(YEAR, MONTH, 1);
+            const startDow = first.getDay();
+            const daysInMonth = new Date(YEAR, MONTH + 1, 0).getDate();
+            const prevDays = new Date(YEAR, MONTH, 0).getDate();
+
+            for (let i = 0; i < startDow; i++) {
+                html += `<div class="day-cell other-month"><span class="day-num">${prevDays - startDow + 1 + i}</span></div>`;
+            }
+            for (let d = 1; d <= daysInMonth; d++) {
+                const isToday = d === TODAY;
+                html += `<div class="day-cell ${isToday ? 'today' : ''}" onclick="openDayPanel(${d})">
+                    <span class="day-num">${d}</span>
+                    <div class="avatar-row">`;
+                for (const u of USERS) {
+                    html += avatarHtml(u, pctFor(u.id, YEAR, MONTH, d));
+                }
+                html += `</div></div>`;
+            }
+            const total = startDow + daysInMonth;
+            const trailing = (7 - (total % 7)) % 7;
+            for (let i = 1; i <= trailing; i++) {
+                html += `<div class="day-cell other-month"><span class="day-num">${i}</span></div>`;
+            }
+            grid.innerHTML = html;
+        }
+
+        // ========== WEEK VIEW ==========
+        function renderWeek() {
+            // Week containing TODAY: Sunday July 19 → Saturday July 25
+            const startDay = TODAY - new Date(YEAR, MONTH, TODAY).getDay(); // 19
+            const grid = document.getElementById('weekGrid');
+            let html = '';
+            for (let i = 0; i < 7; i++) {
+                const d = startDay + i;
+                const dt = new Date(YEAR, MONTH, d);
+                const inMonth = d >= 1 && d <= new Date(YEAR, MONTH + 1, 0).getDate();
+                const isToday = d === TODAY;
+                html += `<div class="week-day">
+                    <div class="week-day-header ${isToday ? 'today' : ''}">
+                        <div class="dow-name">${DOW_NAMES[i]}</div>
+                        <div class="d-num">${dt.getDate()}</div>
+                    </div>
+                    <div class="week-day-body" ${inMonth ? `onclick="openDayPanel(${dt.getDate()})"` : ''}>`;
+                if (inMonth) {
+                    for (const u of USERS) {
+                        const tasks = tasksFor(u.id, dt.getFullYear(), dt.getMonth(), dt.getDate());
+                        if (tasks.length === 0) continue;
+                        const pct = pctFor(u.id, dt.getFullYear(), dt.getMonth(), dt.getDate());
+                        const ds = dateStr(dt.getFullYear(), dt.getMonth(), dt.getDate());
+                        html += `<div class="week-user-block">
+                            <div class="week-user-head">${avatarHtml(u, pct)}<span class="week-user-name">${u.name}</span></div>`;
+                        for (const t of tasks) {
+                            const done = COMPLETIONS[`${u.id}_${ds}_${t.id}`];
+                            html += `<div class="task-chip ${done ? 'done' : ''}" style="background:${t.color}18;"
+                                onclick="event.stopPropagation(); toggleTask('${u.id}','${ds}','${t.id}')">
+                                <span class="t-dot" style="background:${t.color}"></span> ${t.name}
+                                ${done ? '<i class="bi bi-check-lg t-check" style="color:#10b981"></i>' : ''}
+                            </div>`;
+                        }
+                        html += `</div>`;
+                    }
+                }
+                html += `</div></div>`;
+            }
+            grid.innerHTML = html;
+        }
+
+        // ========== DAY DETAIL PANEL ==========
+        function openDayPanel(d) {
+            const dow = new Date(YEAR, MONTH, d).getDay();
+            document.getElementById('dayPanelTitle').textContent = `${DOW_NAMES[dow]} ${d} يوليو`;
+            const ds = dateStr(YEAR, MONTH, d);
+            let html = '';
+            for (const u of USERS) {
+                const tasks = tasksFor(u.id, YEAR, MONTH, d);
+                if (tasks.length === 0) continue;
+                const pct = pctFor(u.id, YEAR, MONTH, d);
+                html += `<div class="day-user-section">
+                    <div class="day-user-head">
+                        ${avatarHtml(u, pct)}
+                        <span class="day-user-name">${u.name}</span>
+                        <span class="day-user-pct">${pct}%</span>
+                    </div>`;
+                for (const t of tasks) {
+                    const done = COMPLETIONS[`${u.id}_${ds}_${t.id}`];
+                    html += `<div class="check-task ${done ? 'done' : ''}" onclick="toggleTask('${u.id}','${ds}','${t.id}')">
+                        <span class="ct-box">${done ? '<i class="bi bi-check-lg"></i>' : ''}</span>
+                        <span class="ct-name">${t.name}</span>
+                        <span class="ct-dot" style="background:${t.color}"></span>
+                    </div>`;
+                }
+                html += `</div>`;
+            }
+            if (!html) html = '<p style="color:var(--text-muted);text-align:center;padding:30px 0;">لا مهام مجدولة لهذا اليوم</p>';
+            document.getElementById('dayPanelBody').innerHTML = html;
+            document.getElementById('overlay').classList.add('open');
+            document.getElementById('dayPanel').classList.add('open');
+        }
+
+        // ========== USER DASHBOARD PANEL ==========
+        function openUserPanel(userId) {
+            const u = USERS.find(x => x.id === userId);
+            const myTasks = TASKS.filter(t => t.userId === userId);
+            const progresses = myTasks.map(t => taskProgress(t));
+            const overall = progresses.length ? Math.round(progresses.reduce((a,b)=>a+b,0) / progresses.length) : 0;
+
+            let html = `
+                <div class="dash-hero">
+                    <div class="dash-avatar" style="background:${u.color}">${u.initial}</div>
+                    <div>
+                        <div class="dash-name">${u.name}</div>
+                        <div class="dash-sub">${myTasks.length} مهام نشطة</div>
+                    </div>
+                </div>
+                <div class="dash-overall">
+                    <div><div class="pct">${overall}%</div><div class="lbl">نسبة الإنجاز الكلية</div></div>
+                    <i class="bi bi-graph-up-arrow" style="font-size:2rem;opacity:0.6"></i>
+                </div>
+                <p class="dash-section-title">تقدم المهام</p>`;
+
+            for (const t of myTasks) {
+                const p = taskProgress(t);
+                const daysTxt = t.days.map(i => DOW_NAMES[i].replace('ال','')).join('، ');
+                const rangeTxt = `${t.start} ← ${t.end || 'بدون نهاية'}`;
+                html += `<div class="task-progress">
+                    <div class="tp-head">
+                        <span class="tp-name"><span class="legend-dot" style="background:${t.color};width:10px;height:10px;border-radius:50%;display:inline-block"></span> ${t.name}</span>
+                        <span class="tp-pct">${p}%</span>
+                    </div>
+                    <div class="tp-bar"><div class="tp-fill" style="width:${p}%;background:${t.color}"></div></div>
+                    <div class="tp-range">${daysTxt} • ${rangeTxt}</div>
+                </div>`;
+            }
+            if (myTasks.length === 0) html += '<p style="color:var(--text-muted);text-align:center;">لا مهام لهذا المستخدم</p>';
+
+            document.getElementById('userPanelBody').innerHTML = html;
+            document.getElementById('overlay').classList.add('open');
+            document.getElementById('userPanel').classList.add('open');
+        }
+
+        // ========== INTERACTIONS ==========
+        function toggleTask(userId, ds, taskId) {
+            const key = `${userId}_${ds}_${taskId}`;
+            if (COMPLETIONS[key]) delete COMPLETIONS[key]; else COMPLETIONS[key] = true;
+            renderMonth();
+            renderWeek();
+            // Refresh open panels
+            if (document.getElementById('dayPanel').classList.contains('open')) {
+                openDayPanel(parseInt(ds.split('-')[2]));
+            }
+        }
+
+        function closePanels() {
+            document.getElementById('overlay').classList.remove('open');
+            document.getElementById('dayPanel').classList.remove('open');
+            document.getElementById('userPanel').classList.remove('open');
+        }
+
+        function setView(v) {
+            document.getElementById('viewMonth').classList.toggle('active', v === 'month');
+            document.getElementById('viewWeek').classList.toggle('active', v === 'week');
+            document.getElementById('btnMonth').classList.toggle('active', v === 'month');
+            document.getElementById('btnWeek').classList.toggle('active', v === 'week');
+            document.getElementById('periodLabel').textContent = v === 'month' ? 'يوليو 2026' : '19 – 25 يوليو 2026';
+        }
+
+        function toggleNewTask() {
+            const f = document.getElementById('newTaskForm');
+            f.style.display = f.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // dow picker toggle (mock)
+        document.querySelectorAll('.dow-pick').forEach(b => b.onclick = () => b.classList.toggle('selected'));
+        document.querySelectorAll('.user-pick').forEach(b => b.onclick = function() {
+            document.querySelectorAll('.user-pick').forEach(x => x.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+
+        renderMonth();
+        renderWeek();
+    </script>
+
+</body>
+</html>

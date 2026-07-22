@@ -1,6 +1,6 @@
-// V6 Config - Settings panel logic (single page)
+// V7 Config - Settings panel logic
 // References shared variables from app.js: localUsers, localTasks, usersNode, tasksNode, completionsNode,
-// lastPinVerification, pinGracePeriod, hashPin, escapeHtml
+// lastPinVerification, pinGracePeriod, hashPin, escapeHtml, family, familyCode
 
 // Load settings data when overlay opens
 function loadSettingsData() {
@@ -8,65 +8,8 @@ function loadSettingsData() {
     loadTasks();
     loadScheduleSettings();
     loadDeviceName();
-    loadRewardSettings();
     if (typeof loadConnectedDevices === 'function') loadConnectedDevices();
     if (typeof loadShareSection === 'function') loadShareSection();
-}
-
-// Reward & Punishment settings
-function loadRewardSettings() {
-    $('#weeklyRewardAmount').val(APP_CONFIG.rewards.week || 100);
-    $('#monthlyRewardAmount').val(APP_CONFIG.rewards.month || 500);
-    renderPunishmentThresholds(APP_CONFIG.punishments);
-}
-
-function renderPunishmentThresholds(punishments) {
-    let html = '';
-    punishments.forEach((p, index) => {
-        html += `<div class="row mb-2 punishment-threshold-item" data-index="${index}">
-            <div class="col-5">
-                <input type="number" class="form-control punishment-threshold" value="${p.threshold}" min="0" max="100" data-index="${index}">
-                <small class="text-muted">أقل من ${p.threshold}%</small>
-            </div>
-            <div class="col-6">
-                <input type="text" class="form-control punishment-description" value="${escapeHtml(p.description)}" data-index="${index}">
-            </div>
-            <div class="col-1 d-flex align-items-center">
-                <button class="btn btn-sm btn-outline-danger" onclick="removePunishmentThreshold(${index})"><i class="bi bi-x"></i></button>
-            </div>
-        </div>`;
-    });
-    $('#punishmentThresholds').html(html);
-}
-
-function addPunishmentThreshold() {
-    APP_CONFIG.punishments.push({ threshold: 50, description: 'عقوبة جديدة' });
-    renderPunishmentThresholds(APP_CONFIG.punishments);
-}
-
-function removePunishmentThreshold(index) {
-    APP_CONFIG.punishments.splice(index, 1);
-    renderPunishmentThresholds(APP_CONFIG.punishments);
-}
-
-function saveRewardSettings() {
-    APP_CONFIG.rewards.week = parseInt($('#weeklyRewardAmount').val()) || 100;
-    APP_CONFIG.rewards.month = parseInt($('#monthlyRewardAmount').val()) || 500;
-
-    const thresholds = [];
-    $('.punishment-threshold-item').each(function() {
-        const threshold = parseInt($(this).find('.punishment-threshold').val());
-        const description = $(this).find('.punishment-description').val().trim();
-        if (!isNaN(threshold) && description) {
-            thresholds.push({ threshold, description });
-        }
-    });
-    APP_CONFIG.punishments = thresholds;
-
-    saveRewardConfig();
-    if (typeof broadcastCurrentData === 'function') broadcastCurrentData();
-    updateStatistics();
-    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم حفظ إعدادات المكافآت والعقوبات', showConfirmButton: false, timer: 1500 });
 }
 
 // Device name
@@ -127,6 +70,13 @@ function loadUsers() {
         </td>
     </tr>`).join('');
     $('#usersTable').html(html);
+
+    // Also populate task form user dropdown
+    const sel = $('#taskUserId');
+    sel.empty();
+    users.forEach(u => {
+        sel.append(`<option value="${u.id}">${escapeHtml(u.name)}</option>`);
+    });
 }
 
 async function addUser() {
@@ -190,34 +140,68 @@ async function deleteUser(id) {
     });
 }
 
-// Task management
+// Task management (per-user)
 function loadTasks() {
+    const users = Object.entries(localUsers).map(([id, u]) => ({ id, ...u }));
+    const userNameMap = {};
+    users.forEach(u => { userNameMap[u.id] = u.name; });
+
     const tasks = Object.entries(localTasks).map(([id, t]) => ({ id, ...t }));
-    const html = tasks.map(t => `<tr>
-        <td>${escapeHtml(t.name)}</td>
-        <td><div style="width:20px;height:20px;background-color:${escapeHtml(t.color)};border-radius:50%;display:inline-block;"></div></td>
-        <td><button class="btn btn-sm btn-danger" onclick="deleteTask('${t.id}')"><i class="bi bi-trash"></i></button></td>
-    </tr>`).join('');
+    const DAY_NAMES_SHORT = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+
+    const html = tasks.map(t => {
+        const daysStr = (t.daysOfWeek || []).map(i => DAY_NAMES_SHORT[i]).join(' ') || '—';
+        const rangeStr = `${t.startDate || '—'} ← ${t.endDate || 'بدون نهاية'}`;
+        return `<tr>
+            <td>${escapeHtml(userNameMap[t.userId] || t.userId)}</td>
+            <td>${escapeHtml(t.name)}</td>
+            <td style="font-size:0.75rem;">${rangeStr}</td>
+            <td style="font-size:0.7rem;">${daysStr}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteTask('${t.id}')"><i class="bi bi-trash"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
     $('#tasksTable').html(html);
+
+    // Set today as default start date
+    if (!$('#taskStartDate').val()) {
+        $('#taskStartDate').val(new Date().toISOString().slice(0, 10));
+    }
 }
 
 async function addTask() {
     const name = $('#taskName').val().trim();
     const color = $('#taskColor').val();
+    const userId = $('#taskUserId').val();
+    const startDate = $('#taskStartDate').val();
+    const endDate = $('#taskEndDate').val() || null;
+    const daysOfWeek = [];
+    $('#taskDaysPicker .dow-pick.selected').each(function() {
+        daysOfWeek.push(parseInt($(this).data('day')));
+    });
+
     if (!name) { Swal.fire('تنبيه', 'يرجى إدخال اسم المهمة', 'warning'); return; }
+    if (!userId) { Swal.fire('تنبيه', 'يرجى اختيار مستخدم', 'warning'); return; }
+    if (!startDate) { Swal.fire('تنبيه', 'يرجى تحديد تاريخ البداية', 'warning'); return; }
+    if (daysOfWeek.length === 0) { Swal.fire('تنبيه', 'يرجى اختيار يوم واحد على الأقل', 'warning'); return; }
 
     requirePinForAction(function() {
         const id = 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-        const taskData = { name, color, createdAt: Date.now() };
+        const taskData = {
+            name, color, userId, startDate, endDate, daysOfWeek, createdAt: Date.now()
+        };
         tasksNode.get(id).put(taskData);
         localTasks[id] = taskData;
         saveToLocal();
         if (typeof broadcastCurrentData === 'function') broadcastCurrentData();
+
+        // Reset form
         $('#taskName').val('');
+        $('#taskDaysPicker .dow-pick').removeClass('selected');
+
         loadTasks();
-        // Update main view
-        if (typeof createTaskLegend === 'function') createTaskLegend();
-        if (typeof loadTaskTable === 'function') loadTaskTable();
+        if (typeof renderCalendar === 'function') renderCalendar();
         Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم إضافة المهمة', showConfirmButton: false, timer: 1500 });
     });
 }
@@ -232,9 +216,7 @@ async function deleteTask(id) {
         saveToLocal();
         if (typeof broadcastCurrentData === 'function') broadcastCurrentData();
         loadTasks();
-        // Update main view
-        if (typeof createTaskLegend === 'function') createTaskLegend();
-        if (typeof loadTaskTable === 'function') loadTaskTable();
+        if (typeof renderCalendar === 'function') renderCalendar();
         Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم حذف المهمة', showConfirmButton: false, timer: 1500 });
     });
 }
@@ -243,7 +225,7 @@ async function deleteTask(id) {
 async function resetData() {
     const result = await Swal.fire({
         title: 'تأكيد إعادة التعيين',
-        text: 'سيتم حذف جميع التقييمات والمكافآت. المهام والمستخدمين سيبقون.',
+        text: 'سيتم حذف جميع التقييمات. المهام والمستخدمين سيبقون.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'نعم، إعادة تعيين',
@@ -251,16 +233,12 @@ async function resetData() {
     });
     if (!result.isConfirmed) return;
 
-    // Always require PIN — no grace period
     await requirePinAlways(async function() {
         completionsNode.map().once((data, id) => { if (data) completionsNode.get(id).put(null); });
         localCompletions = {};
         saveToLocal();
         if (typeof broadcastCurrentData === 'function') broadcastCurrentData();
-        // Refresh main view
-        if (typeof loadTaskTable === 'function') loadTaskTable();
-        if (typeof updateStatistics === 'function') updateStatistics();
-        if (typeof updateChart === 'function') updateChart();
+        if (typeof renderCalendar === 'function') renderCalendar();
         Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم إعادة التعيين', showConfirmButton: false, timer: 1500 });
     });
 }
@@ -271,7 +249,7 @@ function exportData() {
     requirePinForAction(function() {
         try {
             const exportObj = {
-                version: 'v6',
+                version: 'v7',
                 exportedAt: new Date().toISOString(),
                 familyCode: familyCode,
                 familyName: familyName || sessionStorage.getItem('familyName') || '',
@@ -280,10 +258,6 @@ function exportData() {
                     users: localUsers || {},
                     tasks: localTasks || {},
                     completions: localCompletions || {}
-                },
-                rewardConfig: {
-                    rewards: APP_CONFIG.rewards,
-                    punishments: APP_CONFIG.punishments
                 },
                 settings: {}
             };
@@ -339,7 +313,6 @@ function exportData() {
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
-    // Reset the input so the same file can be selected again
     event.target.value = '';
 
     const reader = new FileReader();
@@ -357,7 +330,6 @@ function importData(event) {
                 return;
             }
 
-            // Require PIN
             requirePinForAction(async function() {
                 const result = await Swal.fire({
                     title: 'تأكيد الاستيراد',
@@ -382,11 +354,6 @@ function importData(event) {
                     timestamp: Date.now()
                 };
                 localStorage.setItem(storageKey, JSON.stringify(dataToStore));
-
-                // Import reward config
-                if (imported.rewardConfig) {
-                    localStorage.setItem('taskSchedule_rewardConfig_' + imported.familyCode, JSON.stringify(imported.rewardConfig));
-                }
 
                 // Update Gun.js nodes
                 if (imported.data.users) {
@@ -434,10 +401,6 @@ function importData(event) {
                 if (imported.data.users) localUsers = imported.data.users;
                 if (imported.data.tasks) localTasks = imported.data.tasks;
                 if (imported.data.completions) localCompletions = imported.data.completions;
-                if (imported.rewardConfig) {
-                    if (imported.rewardConfig.rewards) APP_CONFIG.rewards = imported.rewardConfig.rewards;
-                    if (imported.rewardConfig.punishments) APP_CONFIG.punishments = imported.rewardConfig.punishments;
-                }
 
                 // Broadcast to peers
                 if (typeof broadcastCurrentData === 'function') broadcastCurrentData();
@@ -464,14 +427,12 @@ function importData(event) {
 // Require PIN for settings actions (uses grace period, refreshes timer)
 async function requirePinForAction(callback) {
     const now = Date.now();
-    // Check grace period
     if (lastPinVerification && (now - lastPinVerification) < pinGracePeriod) {
-        lastPinVerification = Date.now(); // Refresh timer
+        lastPinVerification = Date.now();
         await callback();
         return;
     }
 
-    // Need PIN — show user selector + PIN prompt
     const allUsers = Object.entries(localUsers).map(([id, u]) => ({ id, ...u }));
     if (allUsers.length === 0) { await callback(); return; }
 
@@ -520,7 +481,7 @@ async function requirePinForAction(callback) {
     });
 
     if (pin) {
-        lastPinVerification = Date.now(); // Refresh grace period
+        lastPinVerification = Date.now();
         await callback();
     }
 }
@@ -577,6 +538,5 @@ async function requirePinAlways(callback) {
 
     if (pin) {
         await callback();
-        // Note: does NOT update lastPinVerification — no grace period for this action
     }
 }

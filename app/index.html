@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المهام العائلية</title>
     <link rel="manifest" href="../manifest.json">
-    <meta name="theme-color" content="#0d6efd">
+    <meta name="theme-color" content="#6366f1">
     <link href="libs/tajawal.css" rel="stylesheet">
     <link href="libs/bootstrap.min.css" rel="stylesheet">
     <link href="libs/bootstrap-icons.css" rel="stylesheet">
@@ -13,9 +13,6 @@
     <style>
         .header-extra-link { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.8rem; margin-left: 8px; }
         .header-extra-link:hover { color: white; }
-        .footer-links { text-align: center; padding: 8px 0; font-size: 0.8rem; }
-        .footer-links a { color: #94a3b8; text-decoration: none; margin: 0 8px; }
-        .footer-links a:hover { color: #6366f1; text-decoration: underline; }
         .join-request-card { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
         .join-request-card .request-info { font-weight: 600; }
         .join-request-card .request-time { color: #94a3b8; font-size: 0.8rem; }
@@ -23,7 +20,7 @@
     </style>
 </head>
 <body>
-    <!-- ==================== MAIN SCHEDULE VIEW ==================== -->
+    <!-- ==================== MAIN CALENDAR VIEW ==================== -->
     <div class="dashboard-container" id="mainView">
         <header class="dashboard-header">
             <div class="header-content">
@@ -32,15 +29,6 @@
                     <div id="syncIndicator" class="sync-indicator"><span class="sync-dot" title="متصل"></span></div>
                 </div>
                 <div class="header-right">
-                    <div class="date-selectors">
-                        <select id="monthSelect" class="form-select">
-                            <option value="0">يناير</option><option value="1">فبراير</option><option value="2">مارس</option>
-                            <option value="3">أبريل</option><option value="4">مايو</option><option value="5">يونيو</option>
-                            <option value="6">يوليو</option><option value="7">أغسطس</option><option value="8">سبتمبر</option>
-                            <option value="9">أكتوبر</option><option value="10">نوفمبر</option><option value="11">ديسمبر</option>
-                        </select>
-                        <select id="yearSelect" class="form-select"></select>
-                    </div>
                     <button class="btn btn-outline-light btn-sm ms-2" id="btnOpenSettings" title="الإعدادات" style="position:relative;">
                         <i class="bi bi-gear"></i>
                         <span class="join-requests-badge" id="joinRequestsBadge">0</span>
@@ -55,71 +43,68 @@
         </header>
 
         <div class="dashboard-content">
-            <div class="stats-bar">
-                <div class="stat-item"><div class="stat-icon-wrap green"><i class="bi bi-trophy"></i></div><div><div class="stat-value" id="totalRewards">0 ريال</div><div class="stat-label">المكافآت</div></div></div>
-                <div class="stat-item"><div class="stat-icon-wrap red"><i class="bi bi-exclamation-triangle"></i></div><div><div class="stat-value" id="activePunishments">0</div><div class="stat-label">العقوبات</div></div></div>
-                <div class="stat-item"><div class="stat-icon-wrap blue"><i class="bi bi-percent"></i></div><div><div class="stat-value" id="averageCompletion">0%</div><div class="stat-label">متوسط الإنجاز</div></div></div>
-                <div class="stat-item"><div class="stat-icon-wrap yellow"><i class="bi bi-calendar-week"></i></div><div><div class="stat-value" id="currentWeek">1</div><div class="stat-label">الأسبوع الحالي</div></div></div>
+            <!-- TOOLBAR -->
+            <div class="cal-toolbar">
+                <div class="nav-group">
+                    <button class="nav-btn" id="btnPrev" title="السابق"><i class="bi bi-chevron-right"></i></button>
+                    <div class="period-label" id="periodLabel"></div>
+                    <button class="nav-btn" id="btnNext" title="التالي"><i class="bi bi-chevron-left"></i></button>
+                    <button class="nav-btn nav-btn-today" id="btnToday" title="اليوم">اليوم</button>
+                </div>
+                <div class="view-toggle">
+                    <button id="btnMonth" class="active">شهر</button>
+                    <button id="btnWeek">أسبوع</button>
+                </div>
             </div>
-            <div class="control-panel"><div class="control-buttons">
-                <button class="btn" onclick="showStatistics()"><i class="bi bi-bar-chart"></i> الإحصائيات</button>
-                <button class="btn" onclick="showRewards()"><i class="bi bi-trophy"></i> المكافآت</button>
-                <button class="btn" onclick="showPunishments()"><i class="bi bi-exclamation-triangle"></i> العقوبات</button>
-            </div></div>
-            <div class="icon-legend">
-                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#10b981"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> ممتاز</div>
-                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#34d399"/><circle cx="11" cy="11" r="6" fill="white"/><circle cx="11" cy="11" r="3" fill="#34d399"/></svg> جيد جداً</div>
-                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#fbbf24"/><path d="M11 5 A6 6 0 0 1 11 17" fill="white" opacity="0.5"/><circle cx="11" cy="11" r="3" fill="white"/></svg> جيد</div>
-                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#f97316" opacity="0.8"/><circle cx="11" cy="11" r="7" fill="white" opacity="0.4"/><circle cx="11" cy="11" r="4" fill="#f97316"/></svg> ضعيف</div>
-                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="#ef4444" opacity="0.6"/><circle cx="11" cy="11" r="10" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4 3"/></svg> مقبول</div>
-                <div class="icon-legend-item"><svg width="18" height="18" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="11" cy="11" r="3" fill="#e2e8f0"/></svg> لم يُنجز</div>
-            </div>
-            <div class="task-legend-container"><div class="task-legend" id="taskLegend"></div></div>
 
-            <div class="table-container">
-                <div class="table-wrapper">
-                    <table id="taskTable" class="task-table"><thead></thead><tbody></tbody></table>
+            <!-- COLOR LEGEND -->
+            <div class="color-legend">
+                <span class="color-legend-label">لون الأفاتار = نسبة إنجاز المستخدم لليوم:</span>
+                <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span> 100%</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#34d399"></span> 80%+</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#fbbf24"></span> 60%+</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> 40%+</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> أقل من 40%</div>
+                <div class="legend-item"><span class="legend-dot" style="background:white;border:1.5px dashed #cbd5e1"></span> لا مهام</div>
+            </div>
+
+            <!-- MONTH VIEW -->
+            <div class="cal-view active" id="viewMonth">
+                <div class="cal-card">
+                    <div class="month-grid" id="monthGrid"></div>
+                </div>
+            </div>
+
+            <!-- WEEK VIEW -->
+            <div class="cal-view" id="viewWeek">
+                <div class="cal-card">
+                    <div class="week-scroll">
+                        <div class="week-grid" id="weekGrid"></div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Statistics Modal -->
-        <div class="modal fade" id="statisticsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">إحصائيات التقدم</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                <div class="stats-row">
-                    <div class="stat-card success"><div class="stat-icon"><i class="bi bi-trophy"></i></div><div class="stat-content"><div class="stat-value" id="modalTotalRewards">0 ريال</div><div class="stat-label">المكافآت</div></div></div>
-                    <div class="stat-card warning"><div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div><div class="stat-content"><div class="stat-value" id="modalActivePunishments">0</div><div class="stat-label">العقوبات</div></div></div>
-                    <div class="stat-card info"><div class="stat-icon"><i class="bi bi-percent"></i></div><div class="stat-content"><div class="stat-value" id="modalAverageCompletion">0%</div><div class="stat-label">متوسط الإنجاز</div></div></div>
-                    <div class="stat-card primary"><div class="stat-icon"><i class="bi bi-calendar-week"></i></div><div class="stat-content"><div class="stat-value" id="modalCurrentWeek">1</div><div class="stat-label">الأسبوع الحالي</div></div></div>
-                </div>
-                <div class="chart-section mt-4"><canvas id="progressChart"></canvas></div>
-            </div>
-        </div></div></div>
+    <!-- ==================== OVERLAY ==================== -->
+    <div class="panel-overlay" id="panelOverlay" onclick="closePanels()"></div>
 
-        <!-- Rewards Modal -->
-        <div class="modal fade" id="rewardsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title"><i class="bi bi-gift"></i> المكافآت</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body"><div class="table-responsive"><table class="table table-striped"><thead><tr><th>الاسم</th><th>الفترة</th><th>النسبة</th><th>المكافأة</th></tr></thead><tbody id="rewardsTableBody"></tbody></table></div></div>
-        </div></div></div>
+    <!-- DAY DETAIL PANEL -->
+    <div class="slide-panel" id="dayPanel">
+        <div class="panel-header">
+            <div class="panel-title" id="dayPanelTitle"></div>
+            <button class="panel-close" onclick="closePanels()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="panel-body" id="dayPanelBody"></div>
+    </div>
 
-        <!-- Punishments Modal -->
-        <div class="modal fade" id="punishmentsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title"><i class="bi bi-x-circle"></i> العقوبات</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body"><div class="table-responsive"><table class="table table-striped"><thead><tr><th>الاسم</th><th>النسبة</th><th>العقوبة</th><th>الحالة</th></tr></thead><tbody id="punishmentsTableBody"></tbody></table></div></div>
-        </div></div></div>
-
-        <!-- Task Completion Modal -->
-        <div class="modal fade" id="taskCompletionModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">إكمال المهام</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                <h6 id="modalDate"></h6><h4 id="modalUser"></h4>
-                <ul id="modalTaskList" class="list-group"></ul>
-                <button class="btn btn-primary w-100 mt-3" onclick="$('#taskCompletionModal').modal('hide')">
-                    <i class="bi bi-check-lg"></i> تم
-                </button>
-            </div>
-        </div></div></div>
+    <!-- USER DASHBOARD PANEL -->
+    <div class="slide-panel" id="userPanel">
+        <div class="panel-header">
+            <div class="panel-title">لوحة المستخدم</div>
+            <button class="panel-close" onclick="closePanels()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="panel-body" id="userPanelBody"></div>
     </div>
 
     <!-- ==================== SETTINGS OVERLAY ==================== -->
@@ -147,16 +132,49 @@
                     </div>
                 </div>
 
-                <!-- Task Management -->
+                <!-- Task Management (per-user) -->
                 <div class="settings-section" id="taskManagement">
                     <h3><i class="bi bi-list-task"></i> إدارة المهام</h3>
+                    <p class="text-muted mb-3"><i class="bi bi-info-circle"></i> كل مهمة تُسند لمستخدم واحد مع تاريخ بداية ونهاية وأيام التكرار</p>
                     <div class="row g-2">
-                        <div class="col-12 col-md-4"><input type="text" class="form-control" id="taskName" placeholder="اسم المهمة"></div>
-                        <div class="col-6 col-md-3"><input type="color" class="form-control form-control-color" id="taskColor" value="#3498db"></div>
-                        <div class="col-6 col-md-5"><button class="btn btn-primary w-100" onclick="addTask()"><i class="bi bi-plus-circle"></i> إضافة مهمة</button></div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">اسم المهمة</label>
+                            <input type="text" class="form-control" id="taskName" placeholder="اسم المهمة">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">اللون</label>
+                            <input type="color" class="form-control form-control-color" id="taskColor" value="#6366f1">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">المستخدم</label>
+                            <select class="form-select" id="taskUserId"></select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">تاريخ البداية</label>
+                            <input type="date" class="form-control" id="taskStartDate">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">تاريخ النهاية <small class="text-muted">(اختياري)</small></label>
+                            <input type="date" class="form-control" id="taskEndDate">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">أيام التكرار</label>
+                            <div class="dow-picker" id="taskDaysPicker">
+                                <button class="dow-pick" data-day="0">أحد</button>
+                                <button class="dow-pick" data-day="1">اثنين</button>
+                                <button class="dow-pick" data-day="2">ثلاثاء</button>
+                                <button class="dow-pick" data-day="3">أربعاء</button>
+                                <button class="dow-pick" data-day="4">خميس</button>
+                                <button class="dow-pick" data-day="5">جمعة</button>
+                                <button class="dow-pick" data-day="6">سبت</button>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-primary" onclick="addTask()"><i class="bi bi-plus-circle"></i> إضافة مهمة</button>
+                        </div>
                     </div>
                     <div class="table-responsive mt-3">
-                        <table class="table table-striped"><thead><tr><th>المهمة</th><th>اللون</th><th>الإجراءات</th></tr></thead><tbody id="tasksTable"></tbody></table>
+                        <table class="table table-striped"><thead><tr><th>المستخدم</th><th>المهمة</th><th>النطاق</th><th>الأيام</th><th>الإجراءات</th></tr></thead><tbody id="tasksTable"></tbody></table>
                     </div>
                 </div>
 
@@ -214,37 +232,6 @@
                     </button>
                 </div>
 
-                <!-- Rewards & Punishments Config -->
-                <div class="settings-section">
-                    <h3><i class="bi bi-trophy"></i> المكافآت والعقوبات</h3>
-
-                    <h6 class="mt-3 mb-2"><i class="bi bi-calendar-week"></i> مكافأة الأسبوع</h6>
-                    <div class="row g-2 mb-3">
-                        <div class="col-12">
-                            <label class="form-label">مبلغ المكافأة الأسبوعية (ريال)</label>
-                            <input type="number" class="form-control" id="weeklyRewardAmount" min="0" step="10">
-                        </div>
-                    </div>
-
-                    <h6 class="mt-3 mb-2"><i class="bi bi-calendar-month"></i> مكافأة الشهر</h6>
-                    <div class="row g-2 mb-3">
-                        <div class="col-12">
-                            <label class="form-label">مبلغ المكافأة الشهرية (ريال)</label>
-                            <input type="number" class="form-control" id="monthlyRewardAmount" min="0" step="50">
-                        </div>
-                    </div>
-
-                    <h6 class="mt-3 mb-2"><i class="bi bi-exclamation-circle"></i> عتبات العقوبات</h6>
-                    <div id="punishmentThresholds"></div>
-                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="addPunishmentThreshold()">
-                        <i class="bi bi-plus"></i> إضافة عتبة
-                    </button>
-
-                    <button class="btn btn-primary mt-3 w-100" onclick="saveRewardSettings()">
-                        <i class="bi bi-save"></i> حفظ إعدادات المكافآت والعقوبات
-                    </button>
-                </div>
-
                 <!-- Data Management -->
                 <div class="settings-section">
                     <h3><i class="bi bi-database"></i> إدارة البيانات</h3>
@@ -260,7 +247,7 @@
                             <i class="bi bi-arrow-clockwise"></i> إعادة تعيين
                         </button>
                     </div>
-                    <small class="text-muted d-block mt-2">تصدير/استيراد جميع البيانات (المستخدمين، المهام، التقييمات، المكافآت)</small>
+                    <small class="text-muted d-block mt-2">تصدير/استيراد جميع البيانات (المستخدمين، المهام، التقييمات)</small>
                 </div>
             </div>
         </div>
@@ -270,16 +257,15 @@
     <!-- Libraries -->
     <script src="libs/bootstrap.bundle.min.js"></script>
     <script src="libs/jquery-3.7.0.min.js"></script>
-    <script src="libs/chart.umd.min.js"></script>
     <script src="libs/moment.min.js"></script>
     <script src="libs/moment-ar.min.js"></script>
     <script src="libs/gun.js"></script>
     <script src="libs/sweetalert2.all.min.js"></script>
     <script src="libs/qrcode.min.js"></script>
     <script src="libs/trystero-bundle.js"></script>
-    <script src="p2p.js?v=5"></script>
-    <script src="app.js?v=11"></script>
-    <script src="config.js?v=11"></script>
+    <script src="p2p.js?v=6"></script>
+    <script src="app.js?v=12"></script>
+    <script src="config.js?v=12"></script>
     <!-- PWA Install -->
     <script>
     let deferredPrompt = null;
